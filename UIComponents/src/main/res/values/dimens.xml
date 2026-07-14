@@ -51,4 +51,6 @@
     <!-- PayPal brand "Mark" (Figma "Mark" node): whole dp, rounded from JS fractional values. -->
     <dimen name="paypal_mark_width">45dp</dimen>
     <dimen name="paypal_mark_height">30dp</dimen>
+
+    <dimen name="credit_messaging_text_size">14sp</dimen>
 </resources>
