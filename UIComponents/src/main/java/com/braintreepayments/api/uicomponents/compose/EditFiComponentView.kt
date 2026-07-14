@@ -81,56 +81,44 @@ fun EditFiComponentView(
 
     val labelSpacing = dimensionResource(R.dimen.edit_fi_paypal_label_spacing)
 
-    // One component: "PayPal" label + the FI chip (card art + ••number + edit pencil). The PayPal
-    // brand Mark (logo) is a SEPARATE view (see [PayPalMark]); the messaging row is separate too —
-    // both embedded with this component in the final PR.
+    // One component: the "PayPal" brand label + the FI chip (card art + ••number + edit pencil).
+    // The PayPal brand Mark (logo) is a SEPARATE view (see [PayPalMark]); the messaging row is
+    // separate too — both embedded with this component in the final PR.
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        if (state is EditFiDisplayState.Loading) {
-            // While the FI loads, the WHOLE component shimmers — including the "PayPal" label — so
-            // nothing real appears until the fetch succeeds.
-            val shimmerShape = RoundedCornerShape(dimensionResource(R.dimen.edit_fi_shimmer_corner_radius))
-            ShimmerBox(
-                modifier = Modifier
-                    .width(dimensionResource(R.dimen.edit_fi_paypal_label_shimmer_width))
-                    .height(dimensionResource(R.dimen.edit_fi_shimmer_label_height)),
-                shape = shimmerShape,
-            )
-            Spacer(modifier = Modifier.width(labelSpacing))
-            Box(modifier = Modifier.weight(1f)) {
-                LoadingChip(style = style)
-            }
-        } else {
-            // Success states: the real "PayPal" label + the FI chip.
-            Text(
-                text = stringResource(R.string.edit_fi_paypal_label),
-                color = colorResource(R.color.edit_fi_paypal_label),
-                fontSize = spDimensionResource(R.dimen.edit_fi_paypal_label_text_size),
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(modifier = Modifier.width(labelSpacing))
-            Box(modifier = Modifier.weight(1f)) {
-                when (state) {
-                    is EditFiDisplayState.Content ->
-                        FiChip(
-                            fiSummary = state.fiSummary,
-                            style = style,
-                            editContentDescription = editContentDescription,
-                            onEditClick = onEditClick,
-                        )
+        // The "PayPal" label always shows; only the FI chip shimmers while the instrument loads
+        // (the label is static — nothing is fetched for it — per the Figma loading state).
+        Text(
+            text = stringResource(R.string.edit_fi_paypal_label),
+            color = colorResource(R.color.edit_fi_paypal_label),
+            fontSize = spDimensionResource(R.dimen.edit_fi_paypal_label_text_size),
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(modifier = Modifier.width(labelSpacing))
+        Box(modifier = Modifier.weight(1f)) {
+            when (state) {
+                // While the FI loads, only the chip (card art + ••number + edit pencil) shimmers.
+                is EditFiDisplayState.Loading -> LoadingChip(style = style)
 
-                    is EditFiDisplayState.NoFi ->
-                        NoFiChip(
-                            buyerEmail = state.buyerEmail,
-                            style = style,
-                            editContentDescription = editContentDescription,
-                            onEditClick = onEditClick,
-                        )
+                is EditFiDisplayState.Content ->
+                    FiChip(
+                        fiSummary = state.fiSummary,
+                        style = style,
+                        editContentDescription = editContentDescription,
+                        onEditClick = onEditClick,
+                    )
 
-                    is EditFiDisplayState.AddCard ->
-                        AddCardChip(content = state, style = style, onAddCardClick = onAddCardClick)
+                is EditFiDisplayState.NoFi ->
+                    NoFiChip(
+                        buyerEmail = state.buyerEmail,
+                        style = style,
+                        editContentDescription = editContentDescription,
+                        onEditClick = onEditClick,
+                    )
 
-                    else -> Unit // Loading is handled in the branch above
-                }
+                is EditFiDisplayState.AddCard ->
+                    AddCardChip(content = state, style = style, onAddCardClick = onAddCardClick)
+
+                else -> Unit // Error returns early above
             }
         }
     }

@@ -34,7 +34,7 @@ import com.braintreepayments.api.uicomponents.R
  * @param modifier Compose modifier for the outer box.
  */
 @Composable
-internal fun PayPalMark(modifier: Modifier = Modifier) {
+fun PayPalMark(modifier: Modifier = Modifier) {
     val cornerRadius = RoundedCornerShape(dimensionResource(R.dimen.paypal_mark_corner_radius))
     Box(
         modifier = modifier

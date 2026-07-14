@@ -44,8 +44,6 @@
     <!-- "PayPal" brand label + gap before the FI chip (Figma "Pay with" row). -->
     <dimen name="edit_fi_paypal_label_text_size">18sp</dimen>
     <dimen name="edit_fi_paypal_label_spacing">8dp</dimen>
-    <!-- Width of the "PayPal" label shimmer placeholder shown while loading. -->
-    <dimen name="edit_fi_paypal_label_shimmer_width">55dp</dimen>
     <dimen name="edit_fi_icon_label_spacing">4dp</dimen>
     <dimen name="edit_fi_label_edit_spacing">8dp</dimen>
     <dimen name="edit_fi_label_max_width">150dp</dimen>
