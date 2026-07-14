@@ -29,4 +29,6 @@
 
     <dimen name="cvv_overlay_elevation">8dp</dimen>
     <dimen name="cvv_overlay_max_width">261dp</dimen>
+
+    <dimen name="credit_messaging_text_size">14sp</dimen>
 </resources>
