@@ -11,6 +11,7 @@ import com.braintreepayments.api.core.AnalyticsParamRepository
 import com.braintreepayments.api.core.BraintreeClient
 import com.braintreepayments.api.core.BraintreeException
 import com.braintreepayments.api.core.BraintreeRequestCodes
+import com.braintreepayments.api.core.ClientToken
 import com.braintreepayments.api.core.Configuration
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.core.LinkType
@@ -342,6 +343,102 @@ class PayPalClient internal constructor(
             PayPalResult.Failure(e)
         }
     }
+
+    /**
+     * Fetches the sticky (default) vaulted funding instrument for display.
+     *
+     * Callback-based variant: the result is delivered asynchronously to [callback]. Use the
+     * `suspend` [fetchFI] overload when calling from a coroutine.
+     *
+     * Reads the `paymentMethodIdJwt` from the client token; if it is missing the [callback] receives
+     * a [PayPalVaultedPaymentMethodResult.Failure] with a [PayPalVaultedPaymentMethodException].
+     *
+     * @param callback [PayPalVaultedPaymentMethodCallback] invoked with the result
+     */
+    @ExperimentalBetaApi
+    fun fetchFI(callback: PayPalVaultedPaymentMethodCallback) {
+        coroutineScope.launch {
+            callback.onPayPalVaultedPaymentMethodResult(fetchFI())
+        }
+    }
+
+    /**
+     * Fetches the sticky (default) vaulted funding instrument for display.
+     *
+     * `suspend` variant: call from a coroutine to receive the result directly as the return value.
+     * Use the [fetchFI] overload that takes a [PayPalVaultedPaymentMethodCallback] outside a
+     * coroutine.
+     *
+     * Reads the `paymentMethodIdJwt` from the client token; if it is missing a
+     * [PayPalVaultedPaymentMethodResult.Failure] with a [PayPalVaultedPaymentMethodException] is
+     * returned.
+     *
+     * @return [PayPalVaultedPaymentMethodResult]
+     */
+    @ExperimentalBetaApi
+    suspend fun fetchFI(): PayPalVaultedPaymentMethodResult {
+        val paymentMethodIdJwt =
+            (merchantRepository.authorization as? ClientToken)?.paymentMethodIdJwt
+        if (paymentMethodIdJwt.isNullOrEmpty()) {
+            return PayPalVaultedPaymentMethodResult.Failure(
+                PayPalVaultedPaymentMethodException(
+                    errorClass = null,
+                    message = PayPalVaultedPaymentMethodException.MISSING_PAYMENT_METHOD_ID_JWT,
+                )
+            )
+        }
+        return fetchVaultedPaymentMethod(
+            FetchVaultedPaymentMethodGraphQLBody.stickyFi(paymentMethodIdJwt)
+        )
+    }
+
+    /**
+     * Refreshes the vaulted funding instrument after an edit, keyed by the approved-checkout order
+     * id.
+     *
+     * Callback-based variant: the result is delivered asynchronously to [callback]. Use the
+     * `suspend` [refetchFI] overload when calling from a coroutine.
+     *
+     * @param orderId  the approved-checkout order id
+     * @param callback [PayPalVaultedPaymentMethodCallback] invoked with the result
+     */
+    @ExperimentalBetaApi
+    fun refetchFI(orderId: String, callback: PayPalVaultedPaymentMethodCallback) {
+        coroutineScope.launch {
+            callback.onPayPalVaultedPaymentMethodResult(refetchFI(orderId))
+        }
+    }
+
+    /**
+     * Refreshes the vaulted funding instrument after an edit, keyed by the approved-checkout order
+     * id.
+     *
+     * `suspend` variant: call from a coroutine to receive the result directly as the return value.
+     * Use the [refetchFI] overload that takes a [PayPalVaultedPaymentMethodCallback] outside a
+     * coroutine.
+     *
+     * @param orderId the approved-checkout order id
+     * @return [PayPalVaultedPaymentMethodResult]
+     */
+    @ExperimentalBetaApi
+    suspend fun refetchFI(orderId: String): PayPalVaultedPaymentMethodResult =
+        fetchVaultedPaymentMethod(
+            FetchVaultedPaymentMethodGraphQLBody.fromApprovedCheckout(orderId)
+        )
+
+    @OptIn(ExperimentalBetaApi::class)
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun fetchVaultedPaymentMethod(
+        body: JSONObject
+    ): PayPalVaultedPaymentMethodResult =
+        try {
+            PayPalVaultedPaymentMethodResult.Success(
+                internalPayPalClient.fetchVaultedPaymentMethod(body)
+            )
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            PayPalVaultedPaymentMethodResult.Failure(e)
+        }
 
     @Throws(
         JSONException::class,

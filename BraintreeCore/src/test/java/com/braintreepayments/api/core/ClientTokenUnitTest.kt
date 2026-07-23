@@ -59,4 +59,21 @@ class ClientTokenUnitTest {
             ) as ClientToken
         assertEquals("fake-customer-123", clientToken.customerId)
     }
+
+    @Test
+    fun paymentMethodIdJwt_returnsValue_whenPresent() {
+        val json = """
+            {"configUrl":"config-url","authorizationFingerprint":"fingerprint",
+             "paymentMethodIdJwt":"fake-pmid-jwt"}
+        """.trimIndent()
+        val clientToken = fromString(FixturesHelper.base64Encode(json)) as ClientToken
+        assertEquals("fake-pmid-jwt", clientToken.paymentMethodIdJwt)
+    }
+
+    @Test
+    fun paymentMethodIdJwt_returnsNull_whenAbsent() {
+        val clientToken =
+            fromString(FixturesHelper.base64Encode(Fixtures.CLIENT_TOKEN)) as ClientToken
+        assertNull(clientToken.paymentMethodIdJwt)
+    }
 }

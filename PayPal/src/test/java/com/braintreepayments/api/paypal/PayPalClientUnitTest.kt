@@ -10,6 +10,7 @@ import com.braintreepayments.api.core.AnalyticsParamRepository
 import com.braintreepayments.api.core.BraintreeClient
 import com.braintreepayments.api.core.BraintreeException
 import com.braintreepayments.api.core.BraintreeRequestCodes
+import com.braintreepayments.api.core.ClientToken
 import com.braintreepayments.api.core.Configuration
 import com.braintreepayments.api.core.Configuration.Companion.fromJson
 import com.braintreepayments.api.core.ExperimentalBetaApi
@@ -933,6 +934,124 @@ class PayPalClientUnitTest {
         advanceUntilIdle()
 
         verify(exactly = 0) { payPalTokenizeCallback.onPayPalResult(any()) }
+    }
+
+    @OptIn(ExperimentalBetaApi::class)
+    @Test
+    fun fetchFI_withJwt_postsStickyFiBodyAndReturnsSuccess() = runTest(testDispatcher) {
+        val clientToken = mockk<ClientToken>(relaxed = true)
+        every { clientToken.paymentMethodIdJwt } returns "pmid-jwt"
+        every { merchantRepository.authorization } returns clientToken
+
+        val bodySlot = slot<JSONObject>()
+        val vaultedPaymentMethod = PayPalVaultedPaymentMethod(emptyList(), null)
+        val payPalInternalClient = MockkPayPalInternalClientBuilder().build()
+        coEvery {
+            payPalInternalClient.fetchVaultedPaymentMethod(capture(bodySlot))
+        } returns vaultedPaymentMethod
+
+        val braintreeClient =
+            MockkBraintreeClientBuilder().configurationSuccess(payPalEnabledConfig).build()
+        val sut = testPaypalClient(braintreeClient, payPalInternalClient, testDispatcher)
+
+        val result = sut.fetchFI()
+
+        val input = bodySlot.captured.getJSONObject("variables").getJSONObject("input")
+        assertEquals("STICKY_FI", input.getString("fetchPaymentMethodType"))
+        assertEquals("pmid-jwt", input.getString("paymentMethodIdJwt"))
+        assertTrue(result is PayPalVaultedPaymentMethodResult.Success)
+    }
+
+    @OptIn(ExperimentalBetaApi::class)
+    @Test
+    fun fetchFI_whenJwtMissing_returnsFailure() = runTest(testDispatcher) {
+        val clientToken = mockk<ClientToken>(relaxed = true)
+        every { clientToken.paymentMethodIdJwt } returns null
+        every { merchantRepository.authorization } returns clientToken
+
+        val payPalInternalClient = MockkPayPalInternalClientBuilder().build()
+        val braintreeClient =
+            MockkBraintreeClientBuilder().configurationSuccess(payPalEnabledConfig).build()
+        val sut = testPaypalClient(braintreeClient, payPalInternalClient, testDispatcher)
+
+        val result = sut.fetchFI()
+
+        assertTrue(result is PayPalVaultedPaymentMethodResult.Failure)
+        val error = (result as PayPalVaultedPaymentMethodResult.Failure).error
+        assertTrue(error is PayPalVaultedPaymentMethodException)
+        assertEquals(
+            PayPalVaultedPaymentMethodException.MISSING_PAYMENT_METHOD_ID_JWT,
+            error.message
+        )
+    }
+
+    @OptIn(ExperimentalBetaApi::class)
+    @Test
+    fun refetchFI_postsApprovedCheckoutBodyAndReturnsSuccess() = runTest(testDispatcher) {
+        val bodySlot = slot<JSONObject>()
+        val vaultedPaymentMethod = PayPalVaultedPaymentMethod(emptyList(), null)
+        val payPalInternalClient = MockkPayPalInternalClientBuilder().build()
+        coEvery {
+            payPalInternalClient.fetchVaultedPaymentMethod(capture(bodySlot))
+        } returns vaultedPaymentMethod
+
+        val braintreeClient =
+            MockkBraintreeClientBuilder().configurationSuccess(payPalEnabledConfig).build()
+        val sut = testPaypalClient(braintreeClient, payPalInternalClient, testDispatcher)
+
+        val result = sut.refetchFI("order-123")
+
+        val input = bodySlot.captured.getJSONObject("variables").getJSONObject("input")
+        assertEquals("FI_FROM_APPROVED_CHECKOUT", input.getString("fetchPaymentMethodType"))
+        assertEquals("order-123", input.getString("orderId"))
+        assertTrue(result is PayPalVaultedPaymentMethodResult.Success)
+    }
+
+    @OptIn(ExperimentalBetaApi::class)
+    @Test
+    fun fetchFI_whenInternalClientThrows_returnsFailurePreservingErrorClass() =
+        runTest(testDispatcher) {
+            val clientToken = mockk<ClientToken>(relaxed = true)
+            every { clientToken.paymentMethodIdJwt } returns "pmid-jwt"
+            every { merchantRepository.authorization } returns clientToken
+
+            val payPalInternalClient = MockkPayPalInternalClientBuilder().build()
+            coEvery {
+                payPalInternalClient.fetchVaultedPaymentMethod(any())
+            } throws PayPalVaultedPaymentMethodException("AUTHENTICATION", "auth error")
+
+            val braintreeClient =
+                MockkBraintreeClientBuilder().configurationSuccess(payPalEnabledConfig).build()
+            val sut = testPaypalClient(braintreeClient, payPalInternalClient, testDispatcher)
+
+            val result = sut.fetchFI()
+
+            assertTrue(result is PayPalVaultedPaymentMethodResult.Failure)
+            val error = (result as PayPalVaultedPaymentMethodResult.Failure).error
+            assertTrue(error is PayPalVaultedPaymentMethodException)
+            assertEquals("AUTHENTICATION", (error as PayPalVaultedPaymentMethodException).errorClass)
+        }
+
+    @OptIn(ExperimentalBetaApi::class)
+    @Test
+    fun fetchFI_whenNetworkError_returnsFailure() = runTest(testDispatcher) {
+        val clientToken = mockk<ClientToken>(relaxed = true)
+        every { clientToken.paymentMethodIdJwt } returns "pmid-jwt"
+        every { merchantRepository.authorization } returns clientToken
+
+        val payPalInternalClient = MockkPayPalInternalClientBuilder().build()
+        coEvery {
+            payPalInternalClient.fetchVaultedPaymentMethod(any())
+        } throws IOException("network down")
+
+        val braintreeClient =
+            MockkBraintreeClientBuilder().configurationSuccess(payPalEnabledConfig).build()
+        val sut = testPaypalClient(braintreeClient, payPalInternalClient, testDispatcher)
+
+        val result = sut.fetchFI()
+
+        assertTrue(result is PayPalVaultedPaymentMethodResult.Failure)
+        assertTrue((result as PayPalVaultedPaymentMethodResult.Failure).error is IOException)
     }
 
     private fun testPaypalClient(
