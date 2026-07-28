@@ -107,6 +107,10 @@ class MockkBraintreeClientBuilder {
 
         every { braintreeClient.getReturnUrlScheme() } returns returnUrlScheme
 
+        authorizationSuccess?.let {
+            every { braintreeClient.getAuthorization() } returns it
+        }
+
         every { braintreeClient.getManifestActivityInfo(any<Class<*>>()) } returns activityInfo
 
         val sendPostAnswer: () -> String = {

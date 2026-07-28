@@ -121,6 +121,13 @@ class BraintreeClient internal constructor(
     /**
      * @suppress
      */
+    fun getAuthorization(): Authorization {
+        return merchantRepository.authorization
+    }
+
+    /**
+     * @suppress
+     */
     fun sendAnalyticsEvent(
         eventName: String,
         params: AnalyticsEventParams = AnalyticsEventParams(),
