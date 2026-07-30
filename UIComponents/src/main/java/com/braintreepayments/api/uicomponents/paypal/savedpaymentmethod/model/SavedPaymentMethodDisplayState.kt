@@ -1,0 +1,37 @@
+package com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model
+
+/**
+ * What the [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPaymentMethodView]
+ * should render. Mapped from the FI fetch / edit result by the owning component.
+ */
+sealed interface SavedPaymentMethodDisplayState {
+
+    /** Initial FI fetch is in flight — show the shimmer skeleton. */
+    data object Loading : SavedPaymentMethodDisplayState
+
+    /** An FI is available — show its brand art, masked number, and the edit pencil. */
+    data class Content(val fiSummary: FiSummary) : SavedPaymentMethodDisplayState
+
+    /**
+     * No FI could be resolved (fetch failed / no vaulted instrument) — show the no-FI fallback
+     * pill: "<buyer email>" with the edit pencil, no icon, no last4.
+     */
+    data class NoFi(val buyerEmail: String) : SavedPaymentMethodDisplayState
+
+    /**
+     * The buyer's wallet is empty / disallowed and wallet cycling is not possible, so no FI can be
+     * shown to select — prompt the buyer to add a card. Renders the amber chip with a warning glyph,
+     * [message] as leading text and [actionLabel] as an underlined link that opens the add-card
+     * flow. The copy is backend-driven.
+     *
+     * @property message     leading text (e.g. "To continue, ").
+     * @property actionLabel the underlined link text (e.g. "add a card").
+     */
+    data class AddCard(val message: String, val actionLabel: String) : SavedPaymentMethodDisplayState
+
+    /**
+     * The FI fetch failed — network error, API failure, or any other error. For now the component
+     * renders nothing (blank) in this state: it simply doesn't load.
+     */
+    data object Error : SavedPaymentMethodDisplayState
+}
