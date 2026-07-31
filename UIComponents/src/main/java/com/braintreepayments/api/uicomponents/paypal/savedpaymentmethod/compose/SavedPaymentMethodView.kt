@@ -1,4 +1,4 @@
-@file:Suppress("TooManyFunctions", "MagicNumber", "UnusedPrivateMember")
+@file:Suppress("TooManyFunctions", "UnusedPrivateMember")
 
 package com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose
 
@@ -50,9 +50,9 @@ import androidx.compose.ui.unit.sp
 import com.braintreepayments.api.uicomponents.R
 import com.braintreepayments.api.uicomponents.compose.PayPalMark
 import com.braintreepayments.api.uicomponents.compose.ShimmerBox
-import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavedPaymentMethodDisplayState
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.FiSummary
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.FiType
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavedPaymentMethodDisplayState
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavedPaymentMethodViewStyle
 
 /**
@@ -196,7 +196,7 @@ private fun FiChip(
     val labelMaxWidth = dimensionResource(R.dimen.edit_fi_label_max_width)
     val labelEditSpacing = dimensionResource(R.dimen.edit_fi_label_edit_spacing)
 
-    Chip(style = style) {
+    Chip(color = style.component.fiClusterBackgroundColor?.let { Color(it) } ?: Color.Transparent) {
         // Pay Later tiles (Pay in 4 / Pay Monthly) show the product name only — no icon.
         fiSummary.iconRes?.let { iconRes ->
             // Image + ContentScale.Fit so the card/bank art fits the icon box without distortion,
@@ -247,7 +247,10 @@ private fun NoFiChip(
 ) {
     val labelEditSpacing = dimensionResource(R.dimen.edit_fi_label_edit_spacing)
 
-    Chip(style = style, modifier = Modifier.fillMaxWidth()) {
+    Chip(
+        modifier = Modifier.fillMaxWidth(),
+        color = style.component.fiClusterBackgroundColor?.let { Color(it) } ?: Color.Transparent,
+    ) {
         Text(
             text = buyerEmail,
             color = textColor(style),
@@ -274,50 +277,38 @@ private fun AddCardChip(
     style: SavedPaymentMethodViewStyle,
     onAddCardClick: () -> Unit,
 ) {
-    val cornerRadius = dimensionResource(R.dimen.edit_fi_chip_corner_radius)
-    val paddingHorizontal = dimensionResource(R.dimen.edit_fi_chip_padding_horizontal)
-    val paddingVertical = dimensionResource(R.dimen.edit_fi_chip_padding_vertical)
     val warningIconSize = dimensionResource(R.dimen.edit_fi_warning_icon_size)
     val iconLabelSpacing = dimensionResource(R.dimen.edit_fi_icon_label_spacing)
     val addCardTextSize = spDimensionResource(R.dimen.edit_fi_add_card_text_size)
 
-    Surface(
+    Chip(
         modifier = Modifier.clickable(onClick = onAddCardClick),
-        shape = RoundedCornerShape(cornerRadius),
         color = colorResource(R.color.edit_fi_add_card_background),
     ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = paddingHorizontal,
-                vertical = paddingVertical,
-            ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.edit_fi_warning),
-                contentDescription = null,
-                tint = colorResource(R.color.edit_fi_warning_icon),
-                modifier = Modifier.size(warningIconSize),
-            )
-            Spacer(modifier = Modifier.width(iconLabelSpacing))
-            Text(
-                text = buildAnnotatedString {
-                    append(content.message)
-                    withStyle(
-                        SpanStyle(
-                            fontWeight = FontWeight.Medium,
-                            textDecoration = TextDecoration.Underline,
-                        ),
-                    ) {
-                        append(content.actionLabel)
-                    }
-                },
-                color = textColor(style),
-                fontSize = addCardTextSize,
-                fontFamily = fontFamily(style),
-                maxLines = 1,
-            )
-        }
+        Icon(
+            painter = painterResource(R.drawable.edit_fi_warning),
+            contentDescription = null,
+            tint = colorResource(R.color.edit_fi_warning_icon),
+            modifier = Modifier.size(warningIconSize),
+        )
+        Spacer(modifier = Modifier.width(iconLabelSpacing))
+        Text(
+            text = buildAnnotatedString {
+                append(content.message)
+                withStyle(
+                    SpanStyle(
+                        fontWeight = FontWeight.Medium,
+                        textDecoration = TextDecoration.Underline,
+                    ),
+                ) {
+                    append(content.actionLabel)
+                }
+            },
+            color = textColor(style),
+            fontSize = addCardTextSize,
+            fontFamily = fontFamily(style),
+            maxLines = 1,
+        )
     }
 }
 
@@ -341,14 +332,14 @@ private fun LoadingChip() {
 }
 
 /**
- * The shared rounded chip container — the FI cluster's fill (Figma "Edit FI Chip" node). Wraps only
- * the funding-instrument content (icon + masked number + edit pencil); the PayPal mark and "PayPal"
- * label sit outside it (see [SavedPaymentMethodView]).
+ * The shared rounded chip container (Figma "Edit FI Chip" node's shape/spacing) — reused for both
+ * the FI cluster's fill and the amber add-card prompt, which only differ by [color] and whether the
+ * chip itself is clickable ([modifier]).
  */
 @Composable
 private fun Chip(
-    style: SavedPaymentMethodViewStyle,
     modifier: Modifier = Modifier,
+    color: Color = Color.Transparent,
     content: @Composable RowScope.() -> Unit,
 ) {
     val cornerRadius = dimensionResource(R.dimen.edit_fi_chip_corner_radius)
@@ -358,7 +349,7 @@ private fun Chip(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(cornerRadius),
-        color = style.component.fiClusterBackgroundColor?.let { Color(it) } ?: Color.Transparent,
+        color = color,
     ) {
         Row(
             modifier = Modifier.padding(
@@ -418,10 +409,10 @@ private fun fiLabel(fiSummary: FiSummary): String =
 private fun textColor(style: SavedPaymentMethodViewStyle): Color =
     style.root.textColorBase?.let { Color(it) } ?: Color.Black
 
-/** The merchant font family from [SavedPaymentMethodViewStyle.layout]; system default when unset. */
+/** The merchant font family from [SavedPaymentMethodViewStyle.root]; system default when unset. */
 @Composable
 private fun fontFamily(style: SavedPaymentMethodViewStyle): FontFamily =
-    style.layout.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default
+    style.root.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default
 
 /**
  * Reads an `sp` font-size dimension from resources (Compose has no direct `sp` equivalent of

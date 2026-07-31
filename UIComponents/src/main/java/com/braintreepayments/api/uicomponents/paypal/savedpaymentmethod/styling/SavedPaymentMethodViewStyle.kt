@@ -30,12 +30,14 @@ data class SavedPaymentMethodViewStyle(
  * @property textColorBase   color for the label, FI text and credit messaging. Default `#222222`.
  * @property primaryColor    accent for the "Learn more" link; `null` ⇒ the link is distinguished by
  * bold + underline in [textColorBase] instead. No default.
+ * @property fontResId       merchant font resource; `null` ⇒ system default.
  */
 @Suppress("MagicNumber")
 data class RootStyle(
     @ColorInt val backgroundColor: Int? = 0xFFFFFFFF.toInt(),
     @ColorInt val textColorBase: Int? = 0xFF222222.toInt(),
     @ColorInt val primaryColor: Int? = null,
+    @FontRes val fontResId: Int? = null,
 )
 
 /**
@@ -75,7 +77,6 @@ data class ComponentStyle(
  * @property labelFontSizeSp   "PayPal" label text size in `sp`. Default `20`.
  * @property fiTextFontSizeSp  FI text (masked number / product name) size in `sp`. Default `14`.
  * @property iconSizeDp        edit (pencil) affordance size in `dp`. Default `16`.
- * @property fontResId         merchant font resource; `null` ⇒ system default.
  */
 @Suppress("MagicNumber")
 data class LayoutStyle(
@@ -86,22 +87,17 @@ data class LayoutStyle(
     val labelFontSizeSp: Float = 20f,
     val fiTextFontSizeSp: Float = 14f,
     val iconSizeDp: Float = 16f,
-    @FontRes val fontResId: Int? = null,
 )
 
 /**
  * The Pay Later credit-messaging line (spec §6.1). Rendered by a separate messaging view — defined
  * here for API completeness; not consumed by [SavedPaymentMethodViewStyle]'s FI chip.
  *
- * @property enabled       show the messaging line. Default `true`.
- * @property messageText   the offer copy; empty until supplied (backend-driven).
- * @property learnMoreText the "Learn more" link copy; empty until supplied (backend-driven).
- * @property fontSizeSp    messaging text size in `sp`. Default `16`.
+ * @property enabled    show the messaging line. Default `true`.
+ * @property fontSizeSp messaging text size in `sp`. Default `16`.
  */
 @Suppress("MagicNumber")
 data class CreditMessagingStyle(
     val enabled: Boolean = true,
-    val messageText: String = "",
-    val learnMoreText: String = "",
     val fontSizeSp: Float = 16f,
 )
