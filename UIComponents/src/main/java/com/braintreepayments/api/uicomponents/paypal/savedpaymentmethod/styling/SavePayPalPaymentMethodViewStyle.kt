@@ -5,7 +5,7 @@ import androidx.annotation.FontRes
 
 /**
  * Merchant-facing styling for
- * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPaymentMethodView].
+ * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavePayPalPaymentMethodView].
  *
  * Mirrors the platform-neutral styling contract in the Edit FI styling spec (§6.1). The three
  * groups map to the web `styles` object — [root] (global type & color), [component] (the outer
@@ -16,7 +16,7 @@ import androidx.annotation.FontRes
  * XML View renderers: colors are `@ColorInt Int?` (`null` ⇒ unset / no fill), dimensions are `Float`
  * `dp`, and text sizes are `Float` `sp` (so text respects the system font-scale setting).
  */
-data class SavedPaymentMethodViewStyle(
+data class SavePayPalPaymentMethodViewStyle(
     val root: RootStyle = RootStyle(),
     val component: ComponentStyle = ComponentStyle(),
     val layout: LayoutStyle = LayoutStyle(),
@@ -91,7 +91,7 @@ data class LayoutStyle(
 
 /**
  * The Pay Later credit-messaging line (spec §6.1). Rendered by a separate messaging view — defined
- * here for API completeness; not consumed by [SavedPaymentMethodViewStyle]'s FI chip.
+ * here for API completeness; not consumed by [SavePayPalPaymentMethodViewStyle]'s FI chip.
  *
  * @property enabled    show the messaging line. Default `true`.
  * @property fontSizeSp messaging text size in `sp`. Default `16`.
