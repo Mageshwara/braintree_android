@@ -49,6 +49,7 @@ import com.braintreepayments.api.uicomponents.compose.ShimmerBox
 import com.braintreepayments.api.paypal.PayPalPaymentMethodSummary
 import com.braintreepayments.api.paypal.PayPalRequest
 import com.braintreepayments.api.paypal.PayPalTokenizeCallback
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.CreditMessagingDisplayState
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavedPayPalPaymentMethodDisplayState
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavedPayPalPaymentMethodViewStyle
 
@@ -87,24 +88,26 @@ fun SavedPayPalPaymentMethodView(
 /**
  * The presentational surface for the SavedPaymentMethod component — renders the PayPal brand
  * monogram next to the sticky funding-instrument (FI) "chip" (PayPal label + brand art +
- * masked number + edit pencil, all inside one rounded pill), plus loading and fallback states.
+ * masked number + edit pencil, all inside one rounded pill), the optional Pay Later
+ * credit-messaging row beneath it, plus loading and fallback states.
  *
  * Purely presentational: holds no PayPal client, performs no network calls, and drives everything
- * from [state]. The owning component (added in a later pass) fetches the FI, launches the
- * edit flow, and maps results into [state].
- *
- * The Pay Later credit-messaging row is a separate view (its own PR) and is not part of this
- * component; embedding the two together is a later pass.
+ * from [state] / [creditMessagingState]. The owning component (added in a later pass) fetches the
+ * FI and the credit message, launches the edit flow, and maps results into these states.
  *
  * @param state      what to render — loading skeleton, an FI chip, the no-FI fallback, or just the
  * PayPal Mark/label with the FI chip hidden (on [SavedPayPalPaymentMethodDisplayState.Error], e.g. a
  * no-network load).
  * @param editContentDescription accessibility label for the edit pencil (backend-driven copy);
  * unused for states without an edit affordance (e.g. [SavedPayPalPaymentMethodDisplayState.Loading]).
- * @param modifier   Compose modifier for the outer container (mark + chip).
+ * @param modifier   Compose modifier for the outer container (mark + chip + messaging row).
  * @param style      merchant styling (see [SavedPayPalPaymentMethodViewStyle]).
+ * @param creditMessagingState what the credit-messaging row should render, or
+ * [CreditMessagingDisplayState.Hidden] to omit it. Hidden whenever
+ * [SavedPayPalPaymentMethodViewStyle.creditMessaging]'s `enabled` is `false`, regardless of state.
  * @param onEditClick invoked when the buyer taps the edit pencil.
  * @param onAddCardClick reserved for the add-card prompt state, added in a fast-follow PR.
+ * @param onLearnMoreClick invoked when the buyer taps the credit-messaging row's "Learn more" link.
  */
 @Composable
 internal fun SavedPayPalPaymentMethodContent(
@@ -112,16 +115,18 @@ internal fun SavedPayPalPaymentMethodContent(
     editContentDescription: String = "",
     modifier: Modifier = Modifier,
     style: SavedPayPalPaymentMethodViewStyle = SavedPayPalPaymentMethodViewStyle(),
+    creditMessagingState: CreditMessagingDisplayState = CreditMessagingDisplayState.Hidden,
     onEditClick: () -> Unit = {},
     onAddCardClick: () -> Unit = {},
+    onLearnMoreClick: () -> Unit = {},
 ) {
     val component = style.component
     val containerShape = RoundedCornerShape(component.cornerRadiusDp.dp)
 
-    // The PayPal Mark (logo) and the "PayPal" text label sit outside the FI "chip" — only the
-    // funding-instrument cluster (icon + masked number + edit pencil) gets the chip's fill (Figma
-    // "Edit FI Chip" node). The messaging row is separate — embedded with this component in a later
-    // pass. The outer container box (height, background, border, corner, padding) is driven by
+    // The PayPal Mark (logo) sits outside the FI "chip" and stays top-aligned with the label + chip
+    // + messaging column (Figma "Marks Message V2" node) — only the funding-instrument cluster
+    // (icon + masked number + edit pencil) gets the chip's fill (Figma "Edit FI Chip" node). The
+    // outer container box (height, background, border, corner, padding) is driven by
     // ComponentStyle / RootStyle.
     Row(
         modifier = modifier
@@ -139,7 +144,7 @@ internal fun SavedPayPalPaymentMethodContent(
                 horizontal = component.horizontalPaddingDp.dp,
                 vertical = component.verticalPaddingDp.dp,
             ),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
     ) {
         if (style.layout.showLogo) {
             // The bordered/backgrounded "Mark" box is deferred to a fast-follow PR — for now the
@@ -154,18 +159,31 @@ internal fun SavedPayPalPaymentMethodContent(
             )
             Spacer(modifier = Modifier.width(style.layout.logoLabelGapDp.dp))
         }
-        if (style.layout.showLabel) {
-            PayPalLabel(style = style)
-            Spacer(modifier = Modifier.width(style.layout.labelFiGapDp.dp))
-        }
-        if (state !is SavedPayPalPaymentMethodDisplayState.Error) {
-            Box(modifier = Modifier.weight(1f)) {
-                ChipContent(
-                    state = state,
-                    style = style,
-                    editContentDescription = editContentDescription,
-                    onEditClick = onEditClick,
-                    onAddCardClick = onAddCardClick,
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (style.layout.showLabel) {
+                    PayPalLabel(style = style)
+                    Spacer(modifier = Modifier.width(style.layout.labelFiGapDp.dp))
+                }
+                if (state !is SavedPayPalPaymentMethodDisplayState.Error) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ChipContent(
+                            state = state,
+                            style = style,
+                            editContentDescription = editContentDescription,
+                            onEditClick = onEditClick,
+                            onAddCardClick = onAddCardClick,
+                        )
+                    }
+                }
+            }
+            if (style.creditMessaging.enabled && creditMessagingState is CreditMessagingDisplayState.Content) {
+                Spacer(modifier = Modifier.height(dimensionResource(R.dimen.credit_messaging_top_margin)))
+                CreditMessagingView(
+                    state = creditMessagingState,
+                    style = style.creditMessaging,
+                    rootStyle = style.root,
+                    onLearnMoreClick = onLearnMoreClick,
                 )
             }
         }
@@ -466,6 +484,24 @@ private fun PreviewEditFiPayPalRow() {
         modifier = Modifier.padding(16.dp),
         state = SavedPayPalPaymentMethodDisplayState.Content(
             PayPalPaymentMethodSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
+        ),
+    )
+}
+
+/** The embedded component — FI chip + Pay Later credit-messaging row beneath it (Figma "Marks
+ * Message V2" node). Design-review only. */
+@Preview(name = "PayPal + FI chip + credit messaging", showBackground = true, widthDp = 420)
+@Composable
+private fun PreviewEditFiPayPalRowWithCreditMessaging() {
+    SavedPayPalPaymentMethodContent(
+        modifier = Modifier.padding(16.dp),
+        state = SavedPayPalPaymentMethodDisplayState.Content(
+            PayPalPaymentMethodSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
+        ),
+        editContentDescription = "Edit funding instrument",
+        creditMessagingState = CreditMessagingDisplayState.Content(
+            messageText = "Or 4 interest-free payments \nof $324.50.",
+            learnMoreText = "Learn more",
         ),
     )
 }

@@ -52,5 +52,6 @@
     <dimen name="paypal_mark_width">45dp</dimen>
     <dimen name="paypal_mark_height">30dp</dimen>
 
-    <dimen name="credit_messaging_text_size">14sp</dimen>
+    <!-- Gap between the FI chip row and the credit-messaging row (Figma "Marks Messaging V1" node). -->
+    <dimen name="credit_messaging_top_margin">6dp</dimen>
 </resources>

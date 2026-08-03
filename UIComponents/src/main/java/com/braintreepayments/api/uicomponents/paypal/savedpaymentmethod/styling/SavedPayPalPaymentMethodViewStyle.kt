@@ -7,10 +7,10 @@ import androidx.annotation.FontRes
  * Merchant-facing styling for
  * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPayPalPaymentMethodView].
  *
- * Mirrors the platform-neutral styling contract in the Edit FI styling spec (§6.1). The three
+ * Mirrors the platform-neutral styling contract in the Edit FI styling spec (§6.1). The four
  * groups map to the web `styles` object — [root] (global type & color), [component] (the outer
- * container box) and [layout] (per-zone visibility, spacing & sizing). The Pay Later credit-messaging
- * line has its own styling, added by a separate PR.
+ * container box), [layout] (per-zone visibility, spacing & sizing) and [creditMessaging] (the
+ * Pay Later credit-messaging line beneath the FI chip).
  *
  * Types follow the spec's Android mapping so a single object drives both the Compose and (future)
  * XML View renderers: colors are `@ColorInt Int?` (`null` ⇒ unset / no fill), dimensions are `Float`
@@ -20,6 +20,7 @@ class SavedPayPalPaymentMethodViewStyle(
     val root: RootStyle = RootStyle(),
     val component: ComponentStyle = ComponentStyle(),
     val layout: LayoutStyle = LayoutStyle(),
+    val creditMessaging: CreditMessagingStyle = CreditMessagingStyle(),
 )
 
 /**
@@ -86,4 +87,22 @@ data class LayoutStyle(
     val labelFontSizeSp: Float = 20f,
     val fiTextFontSizeSp: Float = 14f,
     val iconSizeDp: Float = 16f,
+)
+
+/**
+ * The Pay Later credit-messaging line (spec §6.1), rendered by
+ * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.CreditMessagingView].
+ * The message and link copy are not customizable here — they come from the Credit Presentment API
+ * response (see `CreditMessagingDisplayState`).
+ *
+ * @property enabled         gates whether the row is fetched and shown. Default `true`.
+ * @property fontSizeSp      messaging text size in `sp`. Default `16`; min is the default, max `24`.
+ * @property lineHeightRatio line height as a multiple of [fontSizeSp], so wrapped lines aren't
+ * cramped together. Default `1.5` (e.g. 24sp line height over 16sp text).
+ */
+@Suppress("MagicNumber")
+data class CreditMessagingStyle(
+    val enabled: Boolean = true,
+    val fontSizeSp: Float = 16f,
+    val lineHeightRatio: Float = 1.5f,
 )
