@@ -1,5 +1,5 @@
 <!--
-  Warning ("critical") glyph for the SavedPaymentMethodView add-card chip (empty/disallowed
+  Warning ("critical") glyph for the SavePayPalPaymentMethodView add-card chip (empty/disallowed
   wallet state). Amber triangle with an exclamation cut-out; the tint is applied at
   render time from the @color/edit_fi_warning_icon resource. Replace with the exact PDS
   "critical" asset when available.

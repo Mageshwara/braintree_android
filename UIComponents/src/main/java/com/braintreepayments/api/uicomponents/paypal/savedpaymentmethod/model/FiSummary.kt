@@ -6,24 +6,23 @@ import com.braintreepayments.api.uicomponents.R
 /**
  * A summary of the funding instrument (FI) that PayPal will charge for a vaulted buyer.
  *
- * Used by [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPaymentMethodView]
- * to render the FI chip. Populated from the BT backend `fetch_fi` / `fetch_selected_fi` response.
+ * Used by [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavePayPalPaymentMethodView]
+ * to render the FI chip. Maps 1:1 to the BT backend `fetch_fi` / `fetch_selected_fi` (Atmosphere
+ * `getSavedPaypalPaymentMethod`) response fields (`label`, `imageUrl`, `lastDigits`, `type`).
  *
- * @property brand    the FI brand (e.g. "Visa", "Mastercard"); `null` when unknown.
- * @property last4    the last four digits of the FI; `null` when unavailable.
- * @property type     the FI category (card / bank / Pay Later). Drives the tile icon and, for
- * Pay Later products, whether a product name is shown instead of a masked number.
- * @property displayName the product name to show instead of the masked number, e.g. "Pay in 4",
- * "Pay Monthly". Used by [FiType.PAY_LATER] tiles; `null` for card / bank tiles (which show
- * `••last4`).
- * @property imageUrl remote brand-art URL returned by the backend; optional. Not loaded yet — the
+ * @property type       the FI category (e.g. "CARD", "BANK") returned by the backend. Drives the
+ * tile icon; unrecognized values (e.g. Pay Later products) render no icon.
+ * @property label      the FI display name (e.g. "Visa", "CREDIT UNION 1", "Pay in 4"). Shown as
+ * the chip text when [lastDigits] is unavailable (Pay Later products).
+ * @property lastDigits the last digits of the FI; `null` for products with no masked number (Pay
+ * Later). When present, the chip shows `••<lastDigits>` instead of [label].
+ * @property imageUrl   remote brand-art URL returned by the backend; optional. Not loaded yet — the
  * remote image loader (and brand-specific art / customization) lands in a future PR.
  */
 data class FiSummary(
-    val brand: String? = null,
-    val last4: String? = null,
-    val type: FiType = FiType.CARD,
-    val displayName: String? = null,
+    val type: String,
+    val label: String,
+    val lastDigits: String? = null,
     val imageUrl: String? = null,
 ) {
 
@@ -31,28 +30,20 @@ data class FiSummary(
      * The tile icon drawable, or `null` when the tile shows no icon (Pay Later products render the
      * product name only).
      *
-     * Cards and banks show the generic placeholder glyph. Brand-specific art (from [brand] /
-     * [imageUrl]) is a future PR that adds the remote image loader and styling customization.
+     * Cards and banks show the generic placeholder glyph. Brand-specific art (from [imageUrl]) is a
+     * future PR that adds the remote image loader and styling customization.
      */
     @get:DrawableRes
     internal val iconRes: Int?
-        get() = when (type) {
-            FiType.CARD -> R.drawable.edit_fi_generic_card
-            FiType.BANK -> R.drawable.edit_fi_generic_bank
+        get() = when (type.uppercase()) {
+            TYPE_CARD -> R.drawable.edit_fi_generic_card
+            TYPE_BANK -> R.drawable.edit_fi_generic_bank
             // Pay Later products (Pay in 4 / Pay Monthly): product name only, no icon.
-            FiType.PAY_LATER -> null
+            else -> null
         }
-}
 
-/**
- * The category of a [FiSummary], used to pick the tile icon and label style.
- *
- * - [CARD] / [BANK]: show the generic card / bank placeholder glyph + `••last4`.
- * - [PAY_LATER]: Pay Later product (e.g. Pay in 4, Pay Monthly) — show the product
- *   [FiSummary.displayName] only, with no icon.
- */
-enum class FiType {
-    CARD,
-    BANK,
-    PAY_LATER,
+    internal companion object {
+        private const val TYPE_CARD = "CARD"
+        private const val TYPE_BANK = "BANK"
+    }
 }

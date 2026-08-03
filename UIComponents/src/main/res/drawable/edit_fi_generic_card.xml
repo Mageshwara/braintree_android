@@ -1,5 +1,5 @@
 <!--
-  Generic-card fallback glyph for the SavedPaymentMethodView FI chip (design: "Generic Card (Fallback)").
+  Generic-card fallback glyph for the SavePayPalPaymentMethodView FI chip (design: "Generic Card (Fallback)").
   Card outline with a stripe near the top. Drawn slightly inset within the 28x20 box so it reads a
   little smaller than full-bleed brand art, matching the Figma fallback tile. Untinted (dark baked in).
 -->

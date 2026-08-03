@@ -20,13 +20,21 @@ class FiSummaryUnitTest {
     fun `iconRes returns generic bank glyph for BANK`() {
         assertEquals(
             R.drawable.edit_fi_generic_bank,
-            FiSummary(last4 = "3339", type = FiType.BANK).iconRes
+            FiSummary(type = "BANK", label = "Bank", lastDigits = "3339").iconRes
         )
     }
 
     @Test
-    fun `iconRes returns null for PAY_LATER`() {
-        assertNull(FiSummary(type = FiType.PAY_LATER, displayName = "Pay in 4").iconRes)
+    fun `iconRes is case-insensitive`() {
+        assertEquals(
+            R.drawable.edit_fi_generic_bank,
+            FiSummary(type = "bank", label = "Bank", lastDigits = "3339").iconRes
+        )
+    }
+
+    @Test
+    fun `iconRes returns null for unrecognized type`() {
+        assertNull(FiSummary(type = "PAY_LATER", label = "Pay in 4").iconRes)
     }
 
     // endregion
@@ -34,19 +42,10 @@ class FiSummaryUnitTest {
     // region iconRes - card
 
     @Test
-    fun `iconRes returns generic card glyph for CARD regardless of brand`() {
-        // Brand-specific art (from brand / imageUrl) is a future PR; cards show the generic glyph.
+    fun `iconRes returns generic card glyph for CARD`() {
         assertEquals(
             R.drawable.edit_fi_generic_card,
-            FiSummary(brand = "Visa", last4 = "3339", type = FiType.CARD).iconRes
-        )
-    }
-
-    @Test
-    fun `iconRes returns generic card glyph for null brand`() {
-        assertEquals(
-            R.drawable.edit_fi_generic_card,
-            FiSummary(brand = null, last4 = "4242", type = FiType.CARD).iconRes
+            FiSummary(type = "CARD", label = "Visa", lastDigits = "3339").iconRes
         )
     }
 

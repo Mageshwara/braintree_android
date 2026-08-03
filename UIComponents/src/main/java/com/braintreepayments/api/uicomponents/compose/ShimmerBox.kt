@@ -24,7 +24,7 @@ import com.braintreepayments.api.uicomponents.R
  * Reusable across components: the caller sizes it via [modifier] (e.g. `Modifier.width(..).height(..)`)
  * and, optionally, matches the surrounding surface with [shape] and [color]. Multiple boxes placed in
  * a row/column form a skeleton of the eventual layout (see the FI loading chip in
- * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPaymentMethodView]).
+ * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavePayPalPaymentMethodView]).
  *
  * The pulse is tuned via [minAlpha] / [maxAlpha] / [durationMillis], which default to
  * [ShimmerBoxDefaults]; override them for a faster/slower or more/less pronounced shimmer.

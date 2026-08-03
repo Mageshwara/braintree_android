@@ -1,5 +1,5 @@
 <!--
-  Generic-bank fallback glyph for the SavedPaymentMethodView FI chip (design: "Generic Bank (Fallback)").
+  Generic-bank fallback glyph for the SavePayPalPaymentMethodView FI chip (design: "Generic Bank (Fallback)").
   Institution building: pediment roof + columns + base. Drawn slightly inset within the 28x20 box so
   it reads a little smaller than full-bleed brand art, matching the Figma fallback tile. Untinted (dark).
 -->

@@ -1,22 +1,22 @@
 package com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model
 
 /**
- * What the [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPaymentMethodView]
+ * What the [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavePayPalPaymentMethodView]
  * should render. Mapped from the FI fetch / edit result by the owning component.
  */
-sealed interface SavedPaymentMethodDisplayState {
+sealed interface SavePayPalPaymentMethodDisplayState {
 
     /** Initial FI fetch is in flight — show the shimmer skeleton. */
-    data object Loading : SavedPaymentMethodDisplayState
+    data object Loading : SavePayPalPaymentMethodDisplayState
 
     /** An FI is available — show its brand art, masked number, and the edit pencil. */
-    data class Content(val fiSummary: FiSummary) : SavedPaymentMethodDisplayState
+    data class Content(val fiSummary: FiSummary) : SavePayPalPaymentMethodDisplayState
 
     /**
      * No FI could be resolved (fetch failed / no vaulted instrument) — show the no-FI fallback
      * pill: "<buyer email>" with the edit pencil, no icon, no last4.
      */
-    data class NoFi(val buyerEmail: String) : SavedPaymentMethodDisplayState
+    data class NoFi(val buyerEmail: String) : SavePayPalPaymentMethodDisplayState
 
     /**
      * The buyer's wallet is empty / disallowed and wallet cycling is not possible, so no FI can be
@@ -27,11 +27,11 @@ sealed interface SavedPaymentMethodDisplayState {
      * @property message     leading text (e.g. "To continue, ").
      * @property actionLabel the underlined link text (e.g. "add a card").
      */
-    data class AddCard(val message: String, val actionLabel: String) : SavedPaymentMethodDisplayState
+    data class AddCard(val message: String, val actionLabel: String) : SavePayPalPaymentMethodDisplayState
 
     /**
-     * The FI fetch failed — network error, API failure, or any other error. For now the component
-     * renders nothing (blank) in this state: it simply doesn't load.
+     * The FI fetch failed — network error, API failure, or any other error. On a no-network load,
+     * the FI chip is hidden but the PayPal brand mark and label still render.
      */
-    data object Error : SavedPaymentMethodDisplayState
+    data object Error : SavePayPalPaymentMethodDisplayState
 }
