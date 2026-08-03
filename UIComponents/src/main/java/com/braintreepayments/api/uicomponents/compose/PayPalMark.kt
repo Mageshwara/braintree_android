@@ -28,7 +28,7 @@ import com.braintreepayments.api.uicomponents.R
  *
  * This is a standalone view, separate from the Edit FI chip: in the design it sits before the
  * "PayPal" label in the merchant "Pay with" row, distinct from the funding-instrument icon shown
- * inside [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPaymentMethodView]'s
+ * inside [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavePayPalPaymentMethodView]'s
  * chip. Dimensions follow mobile guidelines (whole dp in
  * `res/values/dimens.xml`, colors in `res/values/colors.xml`) — not the JS SDK's fractional values.
  *

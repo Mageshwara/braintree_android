@@ -51,9 +51,8 @@ import com.braintreepayments.api.uicomponents.R
 import com.braintreepayments.api.uicomponents.compose.PayPalMark
 import com.braintreepayments.api.uicomponents.compose.ShimmerBox
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.FiSummary
-import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.FiType
-import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavedPaymentMethodDisplayState
-import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavedPaymentMethodViewStyle
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavePayPalPaymentMethodDisplayState
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavePayPalPaymentMethodViewStyle
 
 /**
  * The presentational surface for the SavedPaymentMethod component — renders the PayPal brand
@@ -68,27 +67,25 @@ import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.
  * component; embedding the two together is a later pass.
  *
  * @param state      what to render — loading skeleton, an FI chip, the no-FI fallback, the add-card
- * prompt, or nothing (on [SavedPaymentMethodDisplayState.Error]).
+ * prompt, or just the PayPal Mark/label with the FI chip hidden (on
+ * [SavePayPalPaymentMethodDisplayState.Error], e.g. a no-network load).
  * @param editContentDescription accessibility label for the edit pencil (backend-driven copy).
  * @param modifier   Compose modifier for the outer container (mark + chip).
- * @param style      merchant styling (see [SavedPaymentMethodViewStyle]).
+ * @param style      merchant styling (see [SavePayPalPaymentMethodViewStyle]).
  * @param onEditClick invoked when the buyer taps the edit pencil.
  * @param onAddCardClick invoked when the buyer taps the "add a card" link in the
- * [SavedPaymentMethodDisplayState.AddCard] state. UI hook only — launching the add-card flow is
+ * [SavePayPalPaymentMethodDisplayState.AddCard] state. UI hook only — launching the add-card flow is
  * wired in a later pass.
  */
 @Composable
-fun SavedPaymentMethodView(
-    state: SavedPaymentMethodDisplayState,
+fun SavePayPalPaymentMethodView(
+    state: SavePayPalPaymentMethodDisplayState,
     editContentDescription: String,
     modifier: Modifier = Modifier,
-    style: SavedPaymentMethodViewStyle = SavedPaymentMethodViewStyle(),
+    style: SavePayPalPaymentMethodViewStyle = SavePayPalPaymentMethodViewStyle(),
     onEditClick: () -> Unit = {},
     onAddCardClick: () -> Unit = {},
 ) {
-    // Network error / API failure — the component renders nothing (blank); it simply doesn't load.
-    if (state is SavedPaymentMethodDisplayState.Error) return
-
     val component = style.component
     val containerShape = RoundedCornerShape(component.cornerRadiusDp.dp)
 
@@ -123,34 +120,36 @@ fun SavedPaymentMethodView(
             PayPalLabel(style = style)
             Spacer(modifier = Modifier.width(style.layout.labelFiGapDp.dp))
         }
-        Box(modifier = Modifier.weight(1f)) {
-            ChipContent(
-                state = state,
-                style = style,
-                editContentDescription = editContentDescription,
-                onEditClick = onEditClick,
-                onAddCardClick = onAddCardClick,
-            )
+        if (state !is SavePayPalPaymentMethodDisplayState.Error) {
+            Box(modifier = Modifier.weight(1f)) {
+                ChipContent(
+                    state = state,
+                    style = style,
+                    editContentDescription = editContentDescription,
+                    onEditClick = onEditClick,
+                    onAddCardClick = onAddCardClick,
+                )
+            }
         }
     }
 }
 
 /** Renders the state-specific FI content inside the colored chip (the "PayPal" label is drawn by
- * [SavedPaymentMethodView], outside the chip). [SavedPaymentMethodDisplayState.Error] is handled by
+ * [SavePayPalPaymentMethodView], outside the chip). [SavePayPalPaymentMethodDisplayState.Error] is handled by
  * the caller (renders nothing), so it is a no-op here. */
 @Composable
 private fun ChipContent(
-    state: SavedPaymentMethodDisplayState,
-    style: SavedPaymentMethodViewStyle,
+    state: SavePayPalPaymentMethodDisplayState,
+    style: SavePayPalPaymentMethodViewStyle,
     editContentDescription: String,
     onEditClick: () -> Unit,
     onAddCardClick: () -> Unit,
 ) {
     when (state) {
         // While the FI loads, a single shimmer bar stands in for the FI chip.
-        is SavedPaymentMethodDisplayState.Loading -> LoadingChip()
+        is SavePayPalPaymentMethodDisplayState.Loading -> LoadingChip()
 
-        is SavedPaymentMethodDisplayState.Content ->
+        is SavePayPalPaymentMethodDisplayState.Content ->
             FiChip(
                 fiSummary = state.fiSummary,
                 style = style,
@@ -158,7 +157,7 @@ private fun ChipContent(
                 onEditClick = onEditClick,
             )
 
-        is SavedPaymentMethodDisplayState.NoFi ->
+        is SavePayPalPaymentMethodDisplayState.NoFi ->
             NoFiChip(
                 buyerEmail = state.buyerEmail,
                 style = style,
@@ -166,10 +165,10 @@ private fun ChipContent(
                 onEditClick = onEditClick,
             )
 
-        is SavedPaymentMethodDisplayState.AddCard ->
+        is SavePayPalPaymentMethodDisplayState.AddCard ->
             AddCardChip(content = state, style = style, onAddCardClick = onAddCardClick)
 
-        is SavedPaymentMethodDisplayState.Error -> Unit // handled by the caller
+        is SavePayPalPaymentMethodDisplayState.Error -> Unit // handled by the caller
     }
 }
 
@@ -183,7 +182,7 @@ private fun ChipContent(
 @Composable
 private fun FiChip(
     fiSummary: FiSummary,
-    style: SavedPaymentMethodViewStyle,
+    style: SavePayPalPaymentMethodViewStyle,
     editContentDescription: String,
     onEditClick: () -> Unit,
 ) {
@@ -241,7 +240,7 @@ private fun FiChip(
 @Composable
 private fun NoFiChip(
     buyerEmail: String,
-    style: SavedPaymentMethodViewStyle,
+    style: SavePayPalPaymentMethodViewStyle,
     editContentDescription: String,
     onEditClick: () -> Unit,
 ) {
@@ -267,14 +266,14 @@ private fun NoFiChip(
 
 /**
  * The empty/disallowed-wallet chip: "⚠ <message><actionLabel>" on an amber background, where
- * [SavedPaymentMethodDisplayState.AddCard.actionLabel] is styled as an underlined link. The whole
+ * [SavePayPalPaymentMethodDisplayState.AddCard.actionLabel] is styled as an underlined link. The whole
  * chip is the tap target ([onAddCardClick]); the "PayPal" label sits outside it (see
- * [SavedPaymentMethodView]). Copy is backend-driven (carried on [content]).
+ * [SavePayPalPaymentMethodView]). Copy is backend-driven (carried on [content]).
  */
 @Composable
 private fun AddCardChip(
-    content: SavedPaymentMethodDisplayState.AddCard,
-    style: SavedPaymentMethodViewStyle,
+    content: SavePayPalPaymentMethodDisplayState.AddCard,
+    style: SavePayPalPaymentMethodViewStyle,
     onAddCardClick: () -> Unit,
 ) {
     val warningIconSize = dimensionResource(R.dimen.edit_fi_warning_icon_size)
@@ -364,7 +363,7 @@ private fun Chip(
 
 /** The static "PayPal" brand text shown before the FI chip. */
 @Composable
-private fun PayPalLabel(style: SavedPaymentMethodViewStyle) {
+private fun PayPalLabel(style: SavePayPalPaymentMethodViewStyle) {
     Text(
         text = stringResource(R.string.edit_fi_paypal_label),
         color = textColor(style),
@@ -380,7 +379,7 @@ private fun PayPalLabel(style: SavedPaymentMethodViewStyle) {
  * rather than expanding to a 48dp touch target, which would inflate the pill.
  */
 @Composable
-private fun EditButton(style: SavedPaymentMethodViewStyle, contentDescription: String, onClick: () -> Unit) {
+private fun EditButton(style: SavePayPalPaymentMethodViewStyle, contentDescription: String, onClick: () -> Unit) {
     Icon(
         painter = painterResource(R.drawable.edit_fi_edit_pencil),
         contentDescription = contentDescription,
@@ -396,22 +395,20 @@ private fun EditButton(style: SavedPaymentMethodViewStyle, contentDescription: S
 }
 
 /**
- * The chip label: the product [FiSummary.displayName] for Pay Later products, otherwise the masked
- * number (e.g. "••3339"). Empty when neither is available.
+ * The chip label: the masked number (e.g. "••3339") when [FiSummary.lastDigits] is available,
+ * otherwise the FI [FiSummary.label] (e.g. a Pay Later product name).
  */
 @Composable
 private fun fiLabel(fiSummary: FiSummary): String =
-    fiSummary.displayName ?: fiSummary.last4?.let {
-        stringResource(R.string.edit_fi_masked_number, it)
-    } ?: ""
+    fiSummary.lastDigits?.let { stringResource(R.string.edit_fi_masked_number, it) } ?: fiSummary.label
 
-/** The shared base text color from [SavedPaymentMethodViewStyle.root]; black when unset. */
-private fun textColor(style: SavedPaymentMethodViewStyle): Color =
+/** The shared base text color from [SavePayPalPaymentMethodViewStyle.root]; black when unset. */
+private fun textColor(style: SavePayPalPaymentMethodViewStyle): Color =
     style.root.textColorBase?.let { Color(it) } ?: Color.Black
 
-/** The merchant font family from [SavedPaymentMethodViewStyle.root]; system default when unset. */
+/** The merchant font family from [SavePayPalPaymentMethodViewStyle.root]; system default when unset. */
 @Composable
-private fun fontFamily(style: SavedPaymentMethodViewStyle): FontFamily =
+private fun fontFamily(style: SavePayPalPaymentMethodViewStyle): FontFamily =
     style.root.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default
 
 /**
@@ -437,22 +434,24 @@ private fun spDimensionResource(@DimenRes id: Int): TextUnit =
 private fun PreviewEditFiAllTagVersions() {
     Column(modifier = Modifier.padding(16.dp)) {
         val tags = listOf(
-            SavedPaymentMethodDisplayState.Loading,
-            SavedPaymentMethodDisplayState.Content(FiSummary(brand = "Visa", last4 = "3339", type = FiType.CARD)),
-            SavedPaymentMethodDisplayState.Content(FiSummary(brand = "Mastercard", last4 = "3434", type = FiType.CARD)),
-            SavedPaymentMethodDisplayState.Content(FiSummary(type = FiType.PAY_LATER, displayName = "Pay in 4")),
-            SavedPaymentMethodDisplayState.Content(FiSummary(type = FiType.PAY_LATER, displayName = "Pay Monthly")),
-            SavedPaymentMethodDisplayState.Content(FiSummary(brand = null, last4 = "3339", type = FiType.CARD)),
-            SavedPaymentMethodDisplayState.Content(FiSummary(last4 = "3339", type = FiType.BANK)),
-            SavedPaymentMethodDisplayState.NoFi(buyerEmail = "alex.burgos@gmail.com"),
-            SavedPaymentMethodDisplayState.NoFi(
+            SavePayPalPaymentMethodDisplayState.Loading,
+            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "CARD", label = "Visa", lastDigits = "3339")),
+            SavePayPalPaymentMethodDisplayState.Content(
+                FiSummary(type = "CARD", label = "Mastercard", lastDigits = "3434"),
+            ),
+            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "PAY_LATER", label = "Pay in 4")),
+            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "PAY_LATER", label = "Pay Monthly")),
+            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "CARD", label = "Card", lastDigits = "3339")),
+            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "BANK", label = "Bank", lastDigits = "3339")),
+            SavePayPalPaymentMethodDisplayState.NoFi(buyerEmail = "alex.burgos@gmail.com"),
+            SavePayPalPaymentMethodDisplayState.NoFi(
                 buyerEmail = "a.very.long.buyer.email.address@somelongdomainname.example.com",
             ),
-            SavedPaymentMethodDisplayState.AddCard(message = "To continue, ", actionLabel = "add a card"),
-            SavedPaymentMethodDisplayState.Error,
+            SavePayPalPaymentMethodDisplayState.AddCard(message = "To continue, ", actionLabel = "add a card"),
+            SavePayPalPaymentMethodDisplayState.Error,
         )
         tags.forEach { tag ->
-            SavedPaymentMethodView(state = tag, editContentDescription = "Edit funding instrument")
+            SavePayPalPaymentMethodView(state = tag, editContentDescription = "Edit funding instrument")
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -462,9 +461,11 @@ private fun PreviewEditFiAllTagVersions() {
 @Preview(name = "PayPal + FI chip", showBackground = true, widthDp = 420)
 @Composable
 private fun PreviewEditFiPayPalRow() {
-    SavedPaymentMethodView(
+    SavePayPalPaymentMethodView(
         modifier = Modifier.padding(16.dp),
-        state = SavedPaymentMethodDisplayState.Content(FiSummary(brand = "Visa", last4 = "3339", type = FiType.CARD)),
+        state = SavePayPalPaymentMethodDisplayState.Content(
+            FiSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
+        ),
         editContentDescription = "Edit funding instrument",
     )
 }
