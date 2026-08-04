@@ -12,6 +12,7 @@ import com.braintreepayments.api.core.BraintreeException
 import com.braintreepayments.api.core.Configuration
 import com.braintreepayments.api.core.DeviceInspector
 import com.braintreepayments.api.core.DeviceInspectorProvider
+import com.braintreepayments.api.core.GraphQLConstants
 import com.braintreepayments.api.core.MerchantRepository
 import com.braintreepayments.api.core.SetAppSwitchUseCase
 import com.braintreepayments.api.core.usecase.GetAppSwitchUseCase
@@ -98,6 +99,16 @@ internal class PayPalInternalClient(
     suspend fun tokenize(payPalAccount: PayPalAccount): PayPalAccountNonce {
         val tokenizationResponse = apiClient.tokenizeREST(payPalAccount)
         return PayPalAccountNonce.fromJSON(tokenizationResponse)
+    }
+
+    @OptIn(com.braintreepayments.api.core.ExperimentalBetaApi::class)
+    suspend fun getSavedPaypalPaymentMethod(body: JSONObject): PayPalPaymentMethodSummary {
+        val response = JSONObject(braintreeClient.sendGraphQLPOST(body))
+        val errors = response.optJSONArray(GraphQLConstants.Keys.ERRORS)
+        if (errors != null && errors.length() > 0) {
+            throw PayPalPaymentMethodSummaryException.fromGraphQLResponse(response)
+        }
+        return PayPalPaymentMethodSummary.fromJson(response)
     }
 
     @Suppress("LongMethod")
