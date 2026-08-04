@@ -367,13 +367,15 @@ private fun PayPalLabel(style: SavedPayPalPaymentMethodViewStyle) {
  * The edit (pencil) affordance inside the FI chip. Sized to [LayoutStyle.iconSizeDp] (16dp per the
  * Figma "pencil" node) so the chip keeps its ~30dp height — the clickable area matches the glyph
  * rather than expanding to a 48dp touch target, which would inflate the pill.
+ *
+ * The pencil glyph itself is deferred to a fast-follow PR (credit-messaging UI); the tap target
+ * and [onClick] wiring are kept in place via this nullable icon slot so re-wiring the art later
+ * doesn't require restructuring this composable.
  */
 @Composable
 private fun EditButton(style: SavedPayPalPaymentMethodViewStyle, contentDescription: String, onClick: () -> Unit) {
-    Icon(
-        painter = painterResource(R.drawable.saved_paypal_method_edit_pencil),
-        contentDescription = contentDescription,
-        tint = textColor(style),
+    val iconRes: Int? = null
+    Box(
         modifier = Modifier
             .size(style.layout.iconSizeDp.dp)
             .clickable(
@@ -381,7 +383,16 @@ private fun EditButton(style: SavedPayPalPaymentMethodViewStyle, contentDescript
                 indication = null,
                 onClick = onClick,
             ),
-    )
+    ) {
+        iconRes?.let { resolvedIconRes ->
+            Icon(
+                painter = painterResource(resolvedIconRes),
+                contentDescription = contentDescription,
+                tint = textColor(style),
+                modifier = Modifier.size(style.layout.iconSizeDp.dp),
+            )
+        }
+    }
 }
 
 /**
