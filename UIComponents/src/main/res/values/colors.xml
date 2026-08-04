@@ -37,6 +37,10 @@
     <color name="shimmer_gradient_start">#EDF0F2</color>
     <color name="shimmer_gradient_end">#BBBEC0</color>
 
+    <!-- PayPal brand "Mark" box (Figma "Mark" node). -->
+    <color name="paypal_mark_border">#CCCCCC</color>
+    <color name="paypal_mark_background">#FFFFFF</color>
+
     <!-- Amber "add a card" chip (empty / disallowed wallet state); not merchant-customizable. -->
     <color name="edit_fi_add_card_background">#FFF5E1</color>
     <color name="edit_fi_warning_icon">#AA7100</color>

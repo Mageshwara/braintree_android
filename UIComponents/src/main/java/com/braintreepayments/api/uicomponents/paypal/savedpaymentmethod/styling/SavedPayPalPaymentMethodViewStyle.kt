@@ -72,7 +72,7 @@ data class ComponentStyle(
  *
  * @property showLogo          show the PayPal brand mark. Default `true`.
  * @property showLabel         show the "PayPal" text label. Default `true`.
- * @property logoLabelGapDp    gap between the logo and the label in `dp`. Default `6`.
+ * @property logoLabelGapDp    gap between the logo and the label in `dp`. Default `10`.
  * @property labelFiGapDp      gap between the label and the FI in `dp`. Default `12`.
  * @property labelFontSizeSp   "PayPal" label text size in `sp`. Default `20`.
  * @property fiTextFontSizeSp  FI text (masked number / product name) size in `sp`. Default `14`.
@@ -82,7 +82,7 @@ data class ComponentStyle(
 data class LayoutStyle(
     val showLogo: Boolean = true,
     val showLabel: Boolean = true,
-    val logoLabelGapDp: Float = 6f,
+    val logoLabelGapDp: Float = 10f,
     val labelFiGapDp: Float = 12f,
     val labelFontSizeSp: Float = 20f,
     val fiTextFontSizeSp: Float = 14f,

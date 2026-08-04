@@ -51,6 +51,11 @@
     <!-- PayPal brand "Mark" (Figma "Mark" node): whole dp, rounded from JS fractional values. -->
     <dimen name="paypal_mark_width">45dp</dimen>
     <dimen name="paypal_mark_height">30dp</dimen>
+    <dimen name="paypal_mark_border_width">1dp</dimen>
+    <dimen name="paypal_mark_corner_radius">2dp</dimen>
+    <dimen name="paypal_mark_padding_horizontal">11dp</dimen>
+    <dimen name="paypal_mark_padding_top">3dp</dimen>
+    <dimen name="paypal_mark_padding_bottom">4dp</dimen>
 
     <!-- Gap between the FI chip row and the credit-messaging row (Figma "Marks Messaging V1" node). -->
     <dimen name="credit_messaging_top_margin">6dp</dimen>

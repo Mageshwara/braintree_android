@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.net.Uri
 import com.braintreepayments.api.uicomponents.R
+import com.braintreepayments.api.uicomponents.compose.PayPalMark
 import com.braintreepayments.api.uicomponents.compose.ShimmerBox
 import com.braintreepayments.api.paypal.PayPalPaymentMethodSummary
 import com.braintreepayments.api.paypal.PayPalRequest
@@ -93,7 +94,7 @@ fun SavedPayPalPaymentMethodView(
 
 /**
  * The presentational surface for the SavedPaymentMethod component — renders the PayPal brand
- * monogram next to the sticky funding-instrument (FI) "chip" (PayPal label + brand art +
+ * [PayPalMark] next to the sticky funding-instrument (FI) "chip" (PayPal label + brand art +
  * masked number + edit pencil, all inside one rounded pill), the optional Pay Later
  * credit-messaging row beneath it, plus loading and fallback states.
  *
@@ -153,16 +154,7 @@ internal fun SavedPayPalPaymentMethodContent(
         verticalAlignment = Alignment.Top,
     ) {
         if (style.layout.showLogo) {
-            // The bordered/backgrounded "Mark" box is deferred to a fast-follow PR — for now the
-            // monogram art is shown directly.
-            Image(
-                painter = painterResource(R.drawable.paypal_monogram),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .width(dimensionResource(R.dimen.paypal_mark_width))
-                    .height(dimensionResource(R.dimen.paypal_mark_height)),
-            )
+            PayPalMark()
             Spacer(modifier = Modifier.width(style.layout.logoLabelGapDp.dp))
         }
         Column {
