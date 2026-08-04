@@ -52,7 +52,7 @@ data class RootStyle(
  * @property cardIconBackgroundColor fill behind the funding-instrument icon; `null` ⇒ no fill.
  * @property cardIconCornerRadiusDp  funding-instrument icon corner radius in `dp`. Default `3`.
  * @property fiClusterBackgroundColor fill of the FI "chip" pill; `null` ⇒ no fill. Default
- * `#F5F7FA`.
+ * `#F0F2F9`.
  */
 @Suppress("MagicNumber")
 data class ComponentStyle(
@@ -64,7 +64,7 @@ data class ComponentStyle(
     val borderWidthDp: Float = 0f,
     @ColorInt val cardIconBackgroundColor: Int? = null,
     val cardIconCornerRadiusDp: Float = 3f,
-    @ColorInt val fiClusterBackgroundColor: Int? = 0xFFF5F7FA.toInt(),
+    @ColorInt val fiClusterBackgroundColor: Int? = 0xFFF0F2F9.toInt(),
 )
 
 /**

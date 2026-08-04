@@ -1,0 +1,16 @@
+<!--
+  Generic-card fallback glyph for the SavedPayPalPaymentMethodView FI chip (design: "Generic Card (Fallback)").
+  Card outline with a stripe near the top and a small chip mark, exported from the Figma "card" node
+  (7432:65209). Drawn inset within the 28x20 box to match the Figma fallback tile. Untinted (dark
+  baked in).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="20dp"
+    android:viewportWidth="28"
+    android:viewportHeight="20">
+    <path
+        android:fillColor="#000000"
+        android:fillType="evenOdd"
+        android:pathData="M20.474,14.685 L8.14,14.685 L8.14,6.05 L20.474,6.05 L20.474,14.685ZM9.373,8.517 L17.802,8.517 L17.802,9.75 L9.373,9.75 L9.373,13.455 L19.241,13.455 L19.241,7.283 L9.373,7.283 L9.373,8.517ZM17.802,12.217 L14.718,12.217 L14.718,10.984 L17.802,10.984 L17.802,12.217Z" />
+</vector>

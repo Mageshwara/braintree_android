@@ -1,0 +1,29 @@
+<!--
+  Generic-bank fallback glyph for the SavedPayPalPaymentMethodView FI chip (design: "Generic Bank (Fallback)").
+  Institution building: pediment roof + columns + base. Scaled down to match the smaller inset size
+  of the Figma fallback tile (same scale as edit_fi_generic_card). Untinted (dark).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="20dp"
+    android:viewportWidth="28"
+    android:viewportHeight="20">
+    <!-- roof -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M14,5.595 L19.286,8.825 L8.714,8.825 Z" />
+    <!-- columns -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M9.771,9.413 L11.063,9.413 L11.063,13.23 L9.771,13.23 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M13.354,9.413 L14.646,9.413 L14.646,13.23 L13.354,13.23 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M16.937,9.413 L18.229,9.413 L18.229,13.23 L16.937,13.23 Z" />
+    <!-- base -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M8.714,13.524 L19.286,13.524 L19.286,14.581 L8.714,14.581 Z" />
+</vector>

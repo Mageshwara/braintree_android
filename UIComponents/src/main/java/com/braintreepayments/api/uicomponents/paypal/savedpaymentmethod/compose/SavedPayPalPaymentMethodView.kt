@@ -56,6 +56,7 @@ import com.braintreepayments.api.paypal.PayPalRequest
 import com.braintreepayments.api.paypal.PayPalTokenizeCallback
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.CreditMessagingDisplayState
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavedPayPalPaymentMethodDisplayState
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.fallbackIconRes
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.CreditMessagingStyle
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.RootStyle
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavedPayPalPaymentMethodViewStyle
@@ -247,9 +248,10 @@ private fun FiChip(
     val labelEditSpacing = dimensionResource(R.dimen.edit_fi_label_edit_spacing)
 
     Chip(color = style.component.fiClusterBackgroundColor?.let { Color(it) } ?: Color.Transparent) {
-        // Brand-specific FI icon art is deferred to a fast-follow PR; the slot is kept in place
-        // (always null for now) so re-wiring it later doesn't require restructuring this chip.
-        val iconRes: Int? = null
+        // Remote brand art (fiSummary.imageUrl) isn't loaded yet — that's a future PR. Until then,
+        // card/bank FIs fall back to the generic glyph (§13.2); other types (e.g. Pay Later) show
+        // no icon.
+        val iconRes: Int? = fiSummary.fallbackIconRes
         iconRes?.let { resolvedIconRes ->
             // Image + ContentScale.Fit so the card/bank art fits the icon box without distortion,
             // centered within it. Rounded #CCC border matches the PayPal Mark box (Figma "Funding
@@ -420,15 +422,13 @@ private fun PayPalLabel(style: SavedPayPalPaymentMethodViewStyle) {
  * The edit (pencil) affordance inside the FI chip. Sized to [LayoutStyle.iconSizeDp] (16dp per the
  * Figma "pencil" node) so the chip keeps its ~30dp height — the clickable area matches the glyph
  * rather than expanding to a 48dp touch target, which would inflate the pill.
- *
- * The pencil glyph itself is deferred to a fast-follow PR (credit-messaging UI); the tap target
- * and [onClick] wiring are kept in place via this nullable icon slot so re-wiring the art later
- * doesn't require restructuring this composable.
  */
 @Composable
 private fun EditButton(style: SavedPayPalPaymentMethodViewStyle, contentDescription: String, onClick: () -> Unit) {
-    val iconRes: Int? = null
-    Box(
+    Icon(
+        painter = painterResource(R.drawable.edit_fi_edit_pencil),
+        contentDescription = contentDescription,
+        tint = textColor(style),
         modifier = Modifier
             .size(style.layout.iconSizeDp.dp)
             .clickable(
@@ -436,16 +436,7 @@ private fun EditButton(style: SavedPayPalPaymentMethodViewStyle, contentDescript
                 indication = null,
                 onClick = onClick,
             ),
-    ) {
-        iconRes?.let { resolvedIconRes ->
-            Icon(
-                painter = painterResource(resolvedIconRes),
-                contentDescription = contentDescription,
-                tint = textColor(style),
-                modifier = Modifier.size(style.layout.iconSizeDp.dp),
-            )
-        }
-    }
+    )
 }
 
 /**
@@ -493,6 +484,9 @@ private fun PreviewEditFiAllTagVersions() {
                 PayPalPaymentMethodSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
             ),
             SavedPayPalPaymentMethodDisplayState.Content(
+                PayPalPaymentMethodSummary(type = "BANK", label = "CREDIT UNION 1", lastDigits = "6890"),
+            ),
+            SavedPayPalPaymentMethodDisplayState.Content(
                 PayPalPaymentMethodSummary(type = "PAY_LATER", label = "Pay in 4"),
             ),
             SavedPayPalPaymentMethodDisplayState.Content(
@@ -509,18 +503,6 @@ private fun PreviewEditFiAllTagVersions() {
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
-}
-
-/** The component: one chip pill — "PayPal" label + card art + ••number + edit pencil. */
-@Preview(name = "PayPal + FI chip", showBackground = true, widthDp = 420)
-@Composable
-private fun PreviewEditFiPayPalRow() {
-    SavedPayPalPaymentMethodContent(
-        modifier = Modifier.padding(16.dp),
-        state = SavedPayPalPaymentMethodDisplayState.Content(
-            PayPalPaymentMethodSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
-        ),
-    )
 }
 
 /** The embedded component — FI chip + Pay Later credit-messaging row beneath it (Figma "Marks
