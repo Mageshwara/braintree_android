@@ -2,8 +2,8 @@ package com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model
 
 /**
  * What the
- * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.CreditMessagingView]
- * should render — the Pay Later ("BNPL") credit-messaging row shown beneath the FI chip.
+ * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPayPalPaymentMethodView]
+ * should render for the Pay Later ("BNPL") credit-messaging row shown beneath the FI chip.
  *
  * The copy is server-driven (the Credit Presentment API's `preferred_message` content), so it is
  * passed in as data rather than composed from SDK strings.

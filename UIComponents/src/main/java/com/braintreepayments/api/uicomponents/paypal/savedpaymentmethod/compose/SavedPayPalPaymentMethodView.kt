@@ -35,10 +35,14 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -51,6 +55,8 @@ import com.braintreepayments.api.paypal.PayPalRequest
 import com.braintreepayments.api.paypal.PayPalTokenizeCallback
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.CreditMessagingDisplayState
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavedPayPalPaymentMethodDisplayState
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.CreditMessagingStyle
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.RootStyle
 import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavedPayPalPaymentMethodViewStyle
 
 /**
@@ -179,8 +185,8 @@ internal fun SavedPayPalPaymentMethodContent(
             }
             if (style.creditMessaging.enabled && creditMessagingState is CreditMessagingDisplayState.Content) {
                 Spacer(modifier = Modifier.height(dimensionResource(R.dimen.credit_messaging_top_margin)))
-                CreditMessagingView(
-                    state = creditMessagingState,
+                CreditMessagingRow(
+                    content = creditMessagingState,
                     style = style.creditMessaging,
                     rootStyle = style.root,
                     onLearnMoreClick = onLearnMoreClick,
@@ -317,6 +323,43 @@ private fun NoFiChip(
         Spacer(modifier = Modifier.width(labelEditSpacing))
         EditButton(style = style, contentDescription = editContentDescription, onClick = onEditClick)
     }
+}
+
+/**
+ * The Pay Later credit-messaging row: `<messageText> <learnMoreText>`, where the link is
+ * underlined. The row is the tap target.
+ */
+@Composable
+private fun CreditMessagingRow(
+    content: CreditMessagingDisplayState.Content,
+    style: CreditMessagingStyle,
+    rootStyle: RootStyle,
+    onLearnMoreClick: () -> Unit,
+) {
+    val messageTextColor = rootStyle.textColorBase?.let { Color(it) } ?: Color.Black
+    val learnMoreTextColor = rootStyle.primaryColor?.let { Color(it) } ?: messageTextColor
+    val textSize = style.fontSizeSp.sp
+
+    Text(
+        text = buildAnnotatedString {
+            withStyle(SpanStyle(color = messageTextColor)) {
+                append(content.messageText)
+            }
+            append(" ")
+            withStyle(
+                SpanStyle(
+                    color = learnMoreTextColor,
+                    fontWeight = FontWeight.Medium,
+                    textDecoration = TextDecoration.Underline,
+                ),
+            ) {
+                append(content.learnMoreText)
+            }
+        },
+        fontSize = textSize,
+        lineHeight = textSize * style.lineHeightRatio,
+        modifier = Modifier.clickable(onClick = onLearnMoreClick),
+    )
 }
 
 /**

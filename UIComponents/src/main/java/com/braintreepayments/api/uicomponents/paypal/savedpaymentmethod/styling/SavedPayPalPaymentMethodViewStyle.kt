@@ -91,9 +91,9 @@ data class LayoutStyle(
 
 /**
  * The Pay Later credit-messaging line (spec §6.1), rendered by
- * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.CreditMessagingView].
- * The message and link copy are not customizable here — they come from the Credit Presentment API
- * response (see `CreditMessagingDisplayState`).
+ * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPayPalPaymentMethodView]
+ * beneath the FI chip. The message and link copy are not customizable here — they come from the
+ * Credit Presentment API response (see `CreditMessagingDisplayState`).
  *
  * @property enabled         gates whether the row is fetched and shown. Default `true`.
  * @property fontSizeSp      messaging text size in `sp`. Default `16`; min is the default, max `24`.
