@@ -48,12 +48,7 @@
     <dimen name="edit_fi_shimmer_bar_height">20dp</dimen>
     <dimen name="edit_fi_shimmer_corner_radius">6dp</dimen>
 
-    <!-- PayPal brand "Mark" box (Figma "Mark" node): whole dp, rounded from JS fractional values. -->
+    <!-- PayPal brand "Mark" (Figma "Mark" node): whole dp, rounded from JS fractional values. -->
     <dimen name="paypal_mark_width">45dp</dimen>
     <dimen name="paypal_mark_height">30dp</dimen>
-    <dimen name="paypal_mark_border_width">1dp</dimen>
-    <dimen name="paypal_mark_corner_radius">2dp</dimen>
-    <dimen name="paypal_mark_padding_horizontal">11dp</dimen>
-    <dimen name="paypal_mark_padding_top">3dp</dimen>
-    <dimen name="paypal_mark_padding_bottom">4dp</dimen>
 </resources>

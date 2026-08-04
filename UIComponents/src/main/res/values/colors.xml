@@ -33,12 +33,9 @@
     <color name="card_field_background">#FFFFFF</color>
     <color name="card_field_error">#B00020</color>
 
-    <!-- Base fill for the shared ShimmerBox loading skeleton (alpha animated at runtime). -->
-    <color name="shimmer">#E4E7EC</color>
-
-    <!-- PayPal brand "Mark" box (Figma "Mark" node). -->
-    <color name="paypal_mark_border">#CCCCCC</color>
-    <color name="paypal_mark_background">#FFFFFF</color>
+    <!-- Gradient endpoints for the shared ShimmerBox loading skeleton (Figma "Glimmer" node). -->
+    <color name="shimmer_gradient_start">#EDF0F2</color>
+    <color name="shimmer_gradient_end">#BBBEC0</color>
 
     <!-- Amber "add a card" chip (empty / disallowed wallet state); not merchant-customizable. -->
     <color name="edit_fi_add_card_background">#FFF5E1</color>

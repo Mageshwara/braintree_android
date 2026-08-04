@@ -35,28 +35,58 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.Uri
 import com.braintreepayments.api.uicomponents.R
-import com.braintreepayments.api.uicomponents.compose.PayPalMark
 import com.braintreepayments.api.uicomponents.compose.ShimmerBox
-import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.FiSummary
-import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavePayPalPaymentMethodDisplayState
-import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavePayPalPaymentMethodViewStyle
+import com.braintreepayments.api.paypal.PayPalPaymentMethodSummary
+import com.braintreepayments.api.paypal.PayPalRequest
+import com.braintreepayments.api.paypal.PayPalTokenizeCallback
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.model.SavedPayPalPaymentMethodDisplayState
+import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.SavedPayPalPaymentMethodViewStyle
+
+/**
+ * The merchant-facing entry point for the SavedPaymentMethod component.
+ *
+ * Presentational only for now: renders the loading state via [SavedPayPalPaymentMethodContent] and
+ * does not construct a PayPal client/launcher or perform any network calls. Fetching the FI,
+ * launching the edit flow, and invoking [paypalTokenizeCallback] are wired in a later pass.
+ *
+ * @param payPalRequest the PayPal request configuration. Unused until the owning logic is wired.
+ * @param authorization a client token or tokenization key. Unused until the owning logic is wired.
+ * @param appLinkReturnUrl the Android App Link used to return to the app. Unused until the owning
+ * logic is wired.
+ * @param deepLinkFallbackUrlScheme the deep link scheme used as an App Link fallback. Unused until
+ * the owning logic is wired.
+ * @param style merchant styling (see [SavedPayPalPaymentMethodViewStyle]).
+ * @param paypalTokenizeCallback invoked with the tokenize result. Unused until the owning logic is
+ * wired.
+ */
+@Composable
+fun SavedPayPalPaymentMethodView(
+    payPalRequest: PayPalRequest,
+    authorization: String,
+    appLinkReturnUrl: Uri,
+    deepLinkFallbackUrlScheme: String,
+    style: SavedPayPalPaymentMethodViewStyle = SavedPayPalPaymentMethodViewStyle(),
+    paypalTokenizeCallback: PayPalTokenizeCallback,
+) {
+    SavedPayPalPaymentMethodContent(
+        state = SavedPayPalPaymentMethodDisplayState.Loading,
+        style = style,
+    )
+}
 
 /**
  * The presentational surface for the SavedPaymentMethod component — renders the PayPal brand
- * [PayPalMark] logo next to the sticky funding-instrument (FI) "chip" (PayPal label + brand art +
+ * monogram next to the sticky funding-instrument (FI) "chip" (PayPal label + brand art +
  * masked number + edit pencil, all inside one rounded pill), plus loading and fallback states.
  *
  * Purely presentational: holds no PayPal client, performs no network calls, and drives everything
@@ -66,23 +96,22 @@ import com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.styling.
  * The Pay Later credit-messaging row is a separate view (its own PR) and is not part of this
  * component; embedding the two together is a later pass.
  *
- * @param state      what to render — loading skeleton, an FI chip, the no-FI fallback, the add-card
- * prompt, or just the PayPal Mark/label with the FI chip hidden (on
- * [SavePayPalPaymentMethodDisplayState.Error], e.g. a no-network load).
- * @param editContentDescription accessibility label for the edit pencil (backend-driven copy).
+ * @param state      what to render — loading skeleton, an FI chip, the no-FI fallback, or just the
+ * PayPal Mark/label with the FI chip hidden (on [SavedPayPalPaymentMethodDisplayState.Error], e.g. a
+ * no-network load).
+ * @param editContentDescription accessibility label for the edit pencil (backend-driven copy);
+ * unused for states without an edit affordance (e.g. [SavedPayPalPaymentMethodDisplayState.Loading]).
  * @param modifier   Compose modifier for the outer container (mark + chip).
- * @param style      merchant styling (see [SavePayPalPaymentMethodViewStyle]).
+ * @param style      merchant styling (see [SavedPayPalPaymentMethodViewStyle]).
  * @param onEditClick invoked when the buyer taps the edit pencil.
- * @param onAddCardClick invoked when the buyer taps the "add a card" link in the
- * [SavePayPalPaymentMethodDisplayState.AddCard] state. UI hook only — launching the add-card flow is
- * wired in a later pass.
+ * @param onAddCardClick reserved for the add-card prompt state, added in a fast-follow PR.
  */
 @Composable
-fun SavePayPalPaymentMethodView(
-    state: SavePayPalPaymentMethodDisplayState,
-    editContentDescription: String,
+internal fun SavedPayPalPaymentMethodContent(
+    state: SavedPayPalPaymentMethodDisplayState,
+    editContentDescription: String = "",
     modifier: Modifier = Modifier,
-    style: SavePayPalPaymentMethodViewStyle = SavePayPalPaymentMethodViewStyle(),
+    style: SavedPayPalPaymentMethodViewStyle = SavedPayPalPaymentMethodViewStyle(),
     onEditClick: () -> Unit = {},
     onAddCardClick: () -> Unit = {},
 ) {
@@ -113,14 +142,23 @@ fun SavePayPalPaymentMethodView(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (style.layout.showLogo) {
-            PayPalMark()
+            // The bordered/backgrounded "Mark" box is deferred to a fast-follow PR — for now the
+            // monogram art is shown directly.
+            Image(
+                painter = painterResource(R.drawable.paypal_monogram),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .width(dimensionResource(R.dimen.paypal_mark_width))
+                    .height(dimensionResource(R.dimen.paypal_mark_height)),
+            )
             Spacer(modifier = Modifier.width(style.layout.logoLabelGapDp.dp))
         }
         if (style.layout.showLabel) {
             PayPalLabel(style = style)
             Spacer(modifier = Modifier.width(style.layout.labelFiGapDp.dp))
         }
-        if (state !is SavePayPalPaymentMethodDisplayState.Error) {
+        if (state !is SavedPayPalPaymentMethodDisplayState.Error) {
             Box(modifier = Modifier.weight(1f)) {
                 ChipContent(
                     state = state,
@@ -135,21 +173,21 @@ fun SavePayPalPaymentMethodView(
 }
 
 /** Renders the state-specific FI content inside the colored chip (the "PayPal" label is drawn by
- * [SavePayPalPaymentMethodView], outside the chip). [SavePayPalPaymentMethodDisplayState.Error] is handled by
+ * [SavedPayPalPaymentMethodView], outside the chip). [SavedPayPalPaymentMethodDisplayState.Error] is handled by
  * the caller (renders nothing), so it is a no-op here. */
 @Composable
 private fun ChipContent(
-    state: SavePayPalPaymentMethodDisplayState,
-    style: SavePayPalPaymentMethodViewStyle,
+    state: SavedPayPalPaymentMethodDisplayState,
+    style: SavedPayPalPaymentMethodViewStyle,
     editContentDescription: String,
     onEditClick: () -> Unit,
     onAddCardClick: () -> Unit,
 ) {
     when (state) {
         // While the FI loads, a single shimmer bar stands in for the FI chip.
-        is SavePayPalPaymentMethodDisplayState.Loading -> LoadingChip()
+        is SavedPayPalPaymentMethodDisplayState.Loading -> LoadingChip()
 
-        is SavePayPalPaymentMethodDisplayState.Content ->
+        is SavedPayPalPaymentMethodDisplayState.Content ->
             FiChip(
                 fiSummary = state.fiSummary,
                 style = style,
@@ -157,7 +195,7 @@ private fun ChipContent(
                 onEditClick = onEditClick,
             )
 
-        is SavePayPalPaymentMethodDisplayState.NoFi ->
+        is SavedPayPalPaymentMethodDisplayState.NoFi ->
             NoFiChip(
                 buyerEmail = state.buyerEmail,
                 style = style,
@@ -165,10 +203,7 @@ private fun ChipContent(
                 onEditClick = onEditClick,
             )
 
-        is SavePayPalPaymentMethodDisplayState.AddCard ->
-            AddCardChip(content = state, style = style, onAddCardClick = onAddCardClick)
-
-        is SavePayPalPaymentMethodDisplayState.Error -> Unit // handled by the caller
+        is SavedPayPalPaymentMethodDisplayState.Error -> Unit // handled by the caller
     }
 }
 
@@ -181,13 +216,13 @@ private fun ChipContent(
  */
 @Composable
 private fun FiChip(
-    fiSummary: FiSummary,
-    style: SavePayPalPaymentMethodViewStyle,
+    fiSummary: PayPalPaymentMethodSummary,
+    style: SavedPayPalPaymentMethodViewStyle,
     editContentDescription: String,
     onEditClick: () -> Unit,
 ) {
     // The chip's icon is the funding-instrument art (card/bank), drawn in the standard 28x20dp tile
-    // box. The PayPal brand Mark (45x30) is a separate view — see [PayPalMark].
+    // box. The PayPal brand monogram shown in the row header is separate art, sized independently.
     val iconWidth = dimensionResource(R.dimen.edit_fi_icon_width)
     val iconHeight = dimensionResource(R.dimen.edit_fi_icon_height)
     val iconLabelSpacing = dimensionResource(R.dimen.edit_fi_icon_label_spacing)
@@ -196,13 +231,15 @@ private fun FiChip(
     val labelEditSpacing = dimensionResource(R.dimen.edit_fi_label_edit_spacing)
 
     Chip(color = style.component.fiClusterBackgroundColor?.let { Color(it) } ?: Color.Transparent) {
-        // Pay Later tiles (Pay in 4 / Pay Monthly) show the product name only — no icon.
-        fiSummary.iconRes?.let { iconRes ->
+        // Brand-specific FI icon art is deferred to a fast-follow PR; the slot is kept in place
+        // (always null for now) so re-wiring it later doesn't require restructuring this chip.
+        val iconRes: Int? = null
+        iconRes?.let { resolvedIconRes ->
             // Image + ContentScale.Fit so the card/bank art fits the icon box without distortion,
             // centered within it. Rounded #CCC border matches the PayPal Mark box (Figma "Funding
             // Icon" node); clip keeps the art inside the rounded corners.
             Image(
-                painter = painterResource(iconRes),
+                painter = painterResource(resolvedIconRes),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
@@ -240,7 +277,7 @@ private fun FiChip(
 @Composable
 private fun NoFiChip(
     buyerEmail: String,
-    style: SavePayPalPaymentMethodViewStyle,
+    style: SavedPayPalPaymentMethodViewStyle,
     editContentDescription: String,
     onEditClick: () -> Unit,
 ) {
@@ -261,53 +298,6 @@ private fun NoFiChip(
         )
         Spacer(modifier = Modifier.width(labelEditSpacing))
         EditButton(style = style, contentDescription = editContentDescription, onClick = onEditClick)
-    }
-}
-
-/**
- * The empty/disallowed-wallet chip: "⚠ <message><actionLabel>" on an amber background, where
- * [SavePayPalPaymentMethodDisplayState.AddCard.actionLabel] is styled as an underlined link. The whole
- * chip is the tap target ([onAddCardClick]); the "PayPal" label sits outside it (see
- * [SavePayPalPaymentMethodView]). Copy is backend-driven (carried on [content]).
- */
-@Composable
-private fun AddCardChip(
-    content: SavePayPalPaymentMethodDisplayState.AddCard,
-    style: SavePayPalPaymentMethodViewStyle,
-    onAddCardClick: () -> Unit,
-) {
-    val warningIconSize = dimensionResource(R.dimen.edit_fi_warning_icon_size)
-    val iconLabelSpacing = dimensionResource(R.dimen.edit_fi_icon_label_spacing)
-    val addCardTextSize = spDimensionResource(R.dimen.edit_fi_add_card_text_size)
-
-    Chip(
-        modifier = Modifier.clickable(onClick = onAddCardClick),
-        color = colorResource(R.color.edit_fi_add_card_background),
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.edit_fi_warning),
-            contentDescription = null,
-            tint = colorResource(R.color.edit_fi_warning_icon),
-            modifier = Modifier.size(warningIconSize),
-        )
-        Spacer(modifier = Modifier.width(iconLabelSpacing))
-        Text(
-            text = buildAnnotatedString {
-                append(content.message)
-                withStyle(
-                    SpanStyle(
-                        fontWeight = FontWeight.Medium,
-                        textDecoration = TextDecoration.Underline,
-                    ),
-                ) {
-                    append(content.actionLabel)
-                }
-            },
-            color = textColor(style),
-            fontSize = addCardTextSize,
-            fontFamily = fontFamily(style),
-            maxLines = 1,
-        )
     }
 }
 
@@ -363,7 +353,7 @@ private fun Chip(
 
 /** The static "PayPal" brand text shown before the FI chip. */
 @Composable
-private fun PayPalLabel(style: SavePayPalPaymentMethodViewStyle) {
+private fun PayPalLabel(style: SavedPayPalPaymentMethodViewStyle) {
     Text(
         text = stringResource(R.string.edit_fi_paypal_label),
         color = textColor(style),
@@ -379,9 +369,9 @@ private fun PayPalLabel(style: SavePayPalPaymentMethodViewStyle) {
  * rather than expanding to a 48dp touch target, which would inflate the pill.
  */
 @Composable
-private fun EditButton(style: SavePayPalPaymentMethodViewStyle, contentDescription: String, onClick: () -> Unit) {
+private fun EditButton(style: SavedPayPalPaymentMethodViewStyle, contentDescription: String, onClick: () -> Unit) {
     Icon(
-        painter = painterResource(R.drawable.edit_fi_edit_pencil),
+        painter = painterResource(R.drawable.saved_paypal_method_edit_pencil),
         contentDescription = contentDescription,
         tint = textColor(style),
         modifier = Modifier
@@ -395,20 +385,20 @@ private fun EditButton(style: SavePayPalPaymentMethodViewStyle, contentDescripti
 }
 
 /**
- * The chip label: the masked number (e.g. "••3339") when [FiSummary.lastDigits] is available,
- * otherwise the FI [FiSummary.label] (e.g. a Pay Later product name).
+ * The chip label: the masked number (e.g. "••3339") when [PayPalPaymentMethodSummary.lastDigits] is
+ * available, otherwise the FI [PayPalPaymentMethodSummary.label] (e.g. a Pay Later product name).
  */
 @Composable
-private fun fiLabel(fiSummary: FiSummary): String =
+private fun fiLabel(fiSummary: PayPalPaymentMethodSummary): String =
     fiSummary.lastDigits?.let { stringResource(R.string.edit_fi_masked_number, it) } ?: fiSummary.label
 
-/** The shared base text color from [SavePayPalPaymentMethodViewStyle.root]; black when unset. */
-private fun textColor(style: SavePayPalPaymentMethodViewStyle): Color =
+/** The shared base text color from [SavedPayPalPaymentMethodViewStyle.root]; black when unset. */
+private fun textColor(style: SavedPayPalPaymentMethodViewStyle): Color =
     style.root.textColorBase?.let { Color(it) } ?: Color.Black
 
-/** The merchant font family from [SavePayPalPaymentMethodViewStyle.root]; system default when unset. */
+/** The merchant font family from [SavedPayPalPaymentMethodViewStyle.root]; system default when unset. */
 @Composable
-private fun fontFamily(style: SavePayPalPaymentMethodViewStyle): FontFamily =
+private fun fontFamily(style: SavedPayPalPaymentMethodViewStyle): FontFamily =
     style.root.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default
 
 /**
@@ -434,24 +424,24 @@ private fun spDimensionResource(@DimenRes id: Int): TextUnit =
 private fun PreviewEditFiAllTagVersions() {
     Column(modifier = Modifier.padding(16.dp)) {
         val tags = listOf(
-            SavePayPalPaymentMethodDisplayState.Loading,
-            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "CARD", label = "Visa", lastDigits = "3339")),
-            SavePayPalPaymentMethodDisplayState.Content(
-                FiSummary(type = "CARD", label = "Mastercard", lastDigits = "3434"),
+            SavedPayPalPaymentMethodDisplayState.Loading,
+            SavedPayPalPaymentMethodDisplayState.Content(
+                PayPalPaymentMethodSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
             ),
-            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "PAY_LATER", label = "Pay in 4")),
-            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "PAY_LATER", label = "Pay Monthly")),
-            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "CARD", label = "Card", lastDigits = "3339")),
-            SavePayPalPaymentMethodDisplayState.Content(FiSummary(type = "BANK", label = "Bank", lastDigits = "3339")),
-            SavePayPalPaymentMethodDisplayState.NoFi(buyerEmail = "alex.burgos@gmail.com"),
-            SavePayPalPaymentMethodDisplayState.NoFi(
+            SavedPayPalPaymentMethodDisplayState.Content(
+                PayPalPaymentMethodSummary(type = "PAY_LATER", label = "Pay in 4"),
+            ),
+            SavedPayPalPaymentMethodDisplayState.Content(
+                PayPalPaymentMethodSummary(type = "PAY_LATER", label = "Pay Monthly"),
+            ),
+            SavedPayPalPaymentMethodDisplayState.NoFi(buyerEmail = "alex.burgos@gmail.com"),
+            SavedPayPalPaymentMethodDisplayState.NoFi(
                 buyerEmail = "a.very.long.buyer.email.address@somelongdomainname.example.com",
             ),
-            SavePayPalPaymentMethodDisplayState.AddCard(message = "To continue, ", actionLabel = "add a card"),
-            SavePayPalPaymentMethodDisplayState.Error,
+            SavedPayPalPaymentMethodDisplayState.Error,
         )
         tags.forEach { tag ->
-            SavePayPalPaymentMethodView(state = tag, editContentDescription = "Edit funding instrument")
+            SavedPayPalPaymentMethodContent(state = tag)
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -461,12 +451,11 @@ private fun PreviewEditFiAllTagVersions() {
 @Preview(name = "PayPal + FI chip", showBackground = true, widthDp = 420)
 @Composable
 private fun PreviewEditFiPayPalRow() {
-    SavePayPalPaymentMethodView(
+    SavedPayPalPaymentMethodContent(
         modifier = Modifier.padding(16.dp),
-        state = SavePayPalPaymentMethodDisplayState.Content(
-            FiSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
+        state = SavedPayPalPaymentMethodDisplayState.Content(
+            PayPalPaymentMethodSummary(type = "CARD", label = "Visa", lastDigits = "3339"),
         ),
-        editContentDescription = "Edit funding instrument",
     )
 }
 

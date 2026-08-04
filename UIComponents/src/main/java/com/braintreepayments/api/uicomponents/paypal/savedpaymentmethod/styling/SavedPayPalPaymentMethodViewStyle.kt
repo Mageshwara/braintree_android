@@ -5,22 +5,21 @@ import androidx.annotation.FontRes
 
 /**
  * Merchant-facing styling for
- * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavePayPalPaymentMethodView].
+ * [com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose.SavedPayPalPaymentMethodView].
  *
  * Mirrors the platform-neutral styling contract in the Edit FI styling spec (§6.1). The three
  * groups map to the web `styles` object — [root] (global type & color), [component] (the outer
- * container box) and [layout] (per-zone visibility, spacing & sizing) — plus [creditMessaging] for
- * the separate Pay Later messaging line.
+ * container box) and [layout] (per-zone visibility, spacing & sizing). The Pay Later credit-messaging
+ * line has its own styling, added by a separate PR.
  *
  * Types follow the spec's Android mapping so a single object drives both the Compose and (future)
  * XML View renderers: colors are `@ColorInt Int?` (`null` ⇒ unset / no fill), dimensions are `Float`
  * `dp`, and text sizes are `Float` `sp` (so text respects the system font-scale setting).
  */
-data class SavePayPalPaymentMethodViewStyle(
+class SavedPayPalPaymentMethodViewStyle(
     val root: RootStyle = RootStyle(),
     val component: ComponentStyle = ComponentStyle(),
     val layout: LayoutStyle = LayoutStyle(),
-    val creditMessaging: CreditMessagingStyle = CreditMessagingStyle(),
 )
 
 /**
@@ -87,17 +86,4 @@ data class LayoutStyle(
     val labelFontSizeSp: Float = 20f,
     val fiTextFontSizeSp: Float = 14f,
     val iconSizeDp: Float = 16f,
-)
-
-/**
- * The Pay Later credit-messaging line (spec §6.1). Rendered by a separate messaging view — defined
- * here for API completeness; not consumed by [SavePayPalPaymentMethodViewStyle]'s FI chip.
- *
- * @property enabled    show the messaging line. Default `true`.
- * @property fontSizeSp messaging text size in `sp`. Default `16`.
- */
-@Suppress("MagicNumber")
-data class CreditMessagingStyle(
-    val enabled: Boolean = true,
-    val fontSizeSp: Float = 16f,
 )
