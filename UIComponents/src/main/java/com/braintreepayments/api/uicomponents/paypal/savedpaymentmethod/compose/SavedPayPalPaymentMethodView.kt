@@ -2,7 +2,6 @@
 
 package com.braintreepayments.api.uicomponents.paypal.savedpaymentmethod.compose
 
-import androidx.annotation.DimenRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -40,7 +38,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.net.Uri
@@ -99,21 +96,19 @@ fun SavedPayPalPaymentMethodView(
  * @param state      what to render — loading skeleton, an FI chip, the no-FI fallback, or just the
  * PayPal Mark/label with the FI chip hidden (on [SavedPayPalPaymentMethodDisplayState.Error], e.g. a
  * no-network load).
+ * @param modifier   Compose modifier for the outer container (mark + chip).
  * @param editContentDescription accessibility label for the edit pencil (backend-driven copy);
  * unused for states without an edit affordance (e.g. [SavedPayPalPaymentMethodDisplayState.Loading]).
- * @param modifier   Compose modifier for the outer container (mark + chip).
  * @param style      merchant styling (see [SavedPayPalPaymentMethodViewStyle]).
  * @param onEditClick invoked when the buyer taps the edit pencil.
- * @param onAddCardClick reserved for the add-card prompt state, added in a fast-follow PR.
  */
 @Composable
 internal fun SavedPayPalPaymentMethodContent(
     state: SavedPayPalPaymentMethodDisplayState,
-    editContentDescription: String = "",
     modifier: Modifier = Modifier,
+    editContentDescription: String = "",
     style: SavedPayPalPaymentMethodViewStyle = SavedPayPalPaymentMethodViewStyle(),
     onEditClick: () -> Unit = {},
-    onAddCardClick: () -> Unit = {},
 ) {
     val component = style.component
     val containerShape = RoundedCornerShape(component.cornerRadiusDp.dp)
@@ -165,7 +160,6 @@ internal fun SavedPayPalPaymentMethodContent(
                     style = style,
                     editContentDescription = editContentDescription,
                     onEditClick = onEditClick,
-                    onAddCardClick = onAddCardClick,
                 )
             }
         }
@@ -181,7 +175,6 @@ private fun ChipContent(
     style: SavedPayPalPaymentMethodViewStyle,
     editContentDescription: String,
     onEditClick: () -> Unit,
-    onAddCardClick: () -> Unit,
 ) {
     when (state) {
         // While the FI loads, a single shimmer bar stands in for the FI chip.
@@ -411,17 +404,6 @@ private fun textColor(style: SavedPayPalPaymentMethodViewStyle): Color =
 @Composable
 private fun fontFamily(style: SavedPayPalPaymentMethodViewStyle): FontFamily =
     style.root.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default
-
-/**
- * Reads an `sp` font-size dimension from resources (Compose has no direct `sp` equivalent of
- * [dimensionResource], which returns a `Dp`). Reading the value as a `Dp`
- * and converting it back with `Density.toSp` yields the declared `sp` size
- * while keeping the dimension in `res/values/dimens.xml` per the module convention (dp/sp live in
- * dimens.xml, colors in colors.xml — see PayPalButtonView / CardFields).
- */
-@Composable
-private fun spDimensionResource(@DimenRes id: Int): TextUnit =
-    with(LocalDensity.current) { dimensionResource(id).toSp() }
 
 // region Previews
 // Preview mock data — for design review only; not used at runtime.
