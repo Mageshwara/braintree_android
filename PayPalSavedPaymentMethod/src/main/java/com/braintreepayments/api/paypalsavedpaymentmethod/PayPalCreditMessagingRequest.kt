@@ -8,59 +8,108 @@ import org.json.JSONObject
  * Used to request PayPal Pay Later / Credit presentment messaging from
  * `POST /v2/credit/fetch-presentment-messages`.
  *
- * Always requests Treatment A copy directly via `content_attributes`; there is no arm
- * resolution at the network layer.
+ * Always requests Treatment A copy directly via [MessagePlacement.contentAttributes]; there is no
+ * arm resolution at the network layer.
  *
  * Note: **This module is in beta. It's public API may change or be removed in future releases.**
  *
- * @property amount Order amount driving the messaging copy (e.g. "55.00").
- * @property currencyCode ISO currency code for [amount] (e.g. "USD").
- * @property locale Buyer locale, formatted `xx_XX` (e.g. "en_US").
- * @property pageType The page the message is rendered on. Defaults to "CHECKOUT".
- * @property pageUri Optional URI of the page the message is rendered on.
- * @property clientVersion Optional client-version signal sent on `flow_context.version`.
- * @property offerTypes Optional filter on offer categories.
- * @property configurationId Optional merchant messaging config id. Defaults to "DEFAULT" server-side.
+ * @property flowContext Fixed BT-native flow context sent on every request.
+ * @property messagePlacements The order amount(s) to fetch messaging for.
  */
 @ExperimentalBetaApi
 data class PayPalCreditMessagingRequest(
-    val amount: String,
-    val currencyCode: String,
-    val locale: String = "en_US",
-    val pageType: String = "CHECKOUT",
-    val pageUri: String? = null,
-    val clientVersion: String? = null,
-    val offerTypes: List<String>? = null,
-    val configurationId: String? = null
+    val flowContext: FlowContext,
+    val messagePlacements: List<MessagePlacement>
 ) {
 
     /**
      * @suppress
      */
-    fun build(): JSONObject {
-        val flowContext = JSONObject()
-            .put("channel", "MOBILE_APP")
-            .put("flow_specifier", "EARLY_PRESENTMENT")
-            .put("attributes", JSONArray(listOf("BRAND_BRAINTREE", "EXPERIENCE_ANDROID_SDK")))
-            .put("page_type", pageType)
-        pageUri?.let { flowContext.put("page_uri", it) }
-        clientVersion?.let { flowContext.put("version", it) }
+    fun build(): JSONObject = JSONObject()
+        .put(FLOW_CONTEXT_KEY, flowContext.toJson())
+        .put(MESSAGE_PLACEMENTS_KEY, JSONArray(messagePlacements.map { it.toJson() }))
 
-        val amountJson = JSONObject()
-            .put("currency_code", currencyCode)
-            .put("value", amount)
+    private companion object {
+        const val FLOW_CONTEXT_KEY = "flow_context"
+        const val MESSAGE_PLACEMENTS_KEY = "message_placements"
+    }
+}
 
-        val messagePlacement = JSONObject().put("amount", amountJson)
-        messagePlacement.put(
-            "content_attributes",
-            JSONArray(listOf("ALTERNATIVE_PREFIX_UPPERCASE_OR", "MESSAGE_LENGTH_COMPACT"))
-        )
-        offerTypes?.let { messagePlacement.put("offer_types", JSONArray(it)) }
-        configurationId?.let { messagePlacement.put("configuration_id", it) }
+/**
+ * Fixed BT-native flow context sent on every credit presentment messaging request.
+ *
+ * Note: **This module is in beta. It's public API may change or be removed in future releases.**
+ *
+ * @property attributes Flow attributes identifying the brand and platform.
+ * @property channel Fixed to "MOBILE_APP".
+ * @property flowSpecifier Fixed to "EARLY_PRESENTMENT".
+ */
+@ExperimentalBetaApi
+data class FlowContext(
+    val attributes: List<String> = listOf("BRAND_BRAINTREE", "EXPERIENCE_ANDROID_SDK"),
+    val channel: String = "MOBILE_APP",
+    val flowSpecifier: String = "EARLY_PRESENTMENT"
+) {
 
-        return JSONObject()
-            .put("flow_context", flowContext)
-            .put("message_placements", JSONArray().put(messagePlacement))
-            .put("locale", locale)
+    internal fun toJson(): JSONObject = JSONObject()
+        .put(ATTRIBUTES_KEY, JSONArray(attributes))
+        .put(CHANNEL_KEY, channel)
+        .put(FLOW_SPECIFIER_KEY, flowSpecifier)
+
+    private companion object {
+        const val ATTRIBUTES_KEY = "attributes"
+        const val CHANNEL_KEY = "channel"
+        const val FLOW_SPECIFIER_KEY = "flow_specifier"
+    }
+}
+
+/**
+ * A single order amount to fetch presentment messaging for.
+ *
+ * Note: **This module is in beta. It's public API may change or be removed in future releases.**
+ *
+ * @property amount The order amount driving the messaging copy.
+ * @property contentAttributes Selects the Treatment A ("Or" copy, compact) message variant.
+ */
+@ExperimentalBetaApi
+data class MessagePlacement(
+    val amount: Amount,
+    val contentAttributes: List<String> = listOf(
+        "ALTERNATIVE_PREFIX_UPPERCASE_OR",
+        "MESSAGE_LENGTH_COMPACT"
+    )
+) {
+
+    internal fun toJson(): JSONObject = JSONObject()
+        .put(AMOUNT_KEY, amount.toJson())
+        .put(CONTENT_ATTRIBUTES_KEY, JSONArray(contentAttributes))
+
+    private companion object {
+        const val AMOUNT_KEY = "amount"
+        const val CONTENT_ATTRIBUTES_KEY = "content_attributes"
+    }
+}
+
+/**
+ * An order amount.
+ *
+ * Note: **This module is in beta. It's public API may change or be removed in future releases.**
+ *
+ * @property currencyCode ISO currency code, e.g. "USD".
+ * @property value The amount, e.g. "55.00".
+ */
+@ExperimentalBetaApi
+data class Amount(
+    val currencyCode: String,
+    val value: String
+) {
+
+    internal fun toJson(): JSONObject = JSONObject()
+        .put(CURRENCY_CODE_KEY, currencyCode)
+        .put(VALUE_KEY, value)
+
+    private companion object {
+        const val CURRENCY_CODE_KEY = "currency_code"
+        const val VALUE_KEY = "value"
     }
 }

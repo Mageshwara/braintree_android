@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.IOException
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalBetaApi::class)
@@ -135,7 +136,12 @@ class PayPalPaymentMethodClientUnitTest {
             } returns responseJson
 
             val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
-            val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+            val request = PayPalCreditMessagingRequest(
+                flowContext = FlowContext(),
+                messagePlacements = listOf(
+                    MessagePlacement(amount = Amount(currencyCode = "USD", value = "55.00"))
+                )
+            )
 
             val result = sut.fetchCreditPresentmentMessages(request)
 
@@ -144,13 +150,11 @@ class PayPalPaymentMethodClientUnitTest {
                 urlSlot.captured
             )
             assertEquals(request.build().toString(), bodySlot.captured)
-            assertTrue(result is PayPalCreditMessagingResult.Success)
-            val message = (result as PayPalCreditMessagingResult.Success).message
-            assertEquals("msg-1", message.id)
-            assertEquals("PLLT_MQ_GZ", message.type)
-            assertEquals("Learn more", message.actionItems.first().text)
-            assertEquals("https://paypal.com/impression", message.impressionUrl)
-            assertEquals("DEFAULT_PREFERRED", message.selectionReasons.first().code)
+            requireNotNull(result)
+            assertEquals("msg-1", result.messageId)
+            assertEquals("PLLT_MQ_GZ", result.messageType)
+            assertEquals("Learn more", result.learnMoreText)
+            assertEquals("https://paypal.com/impression", result.impressionUrl)
         }
 
     @Test
@@ -166,7 +170,12 @@ class PayPalPaymentMethodClientUnitTest {
             } returns responseJson
 
             val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
-            val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+            val request = PayPalCreditMessagingRequest(
+                flowContext = FlowContext(),
+                messagePlacements = listOf(
+                    MessagePlacement(amount = Amount(currencyCode = "USD", value = "55.00"))
+                )
+            )
 
             sut.fetchCreditPresentmentMessages(request)
 
@@ -177,7 +186,7 @@ class PayPalPaymentMethodClientUnitTest {
         }
 
     @Test
-    fun fetchCreditPresentmentMessages_whenNoPreferredMessage_returnsFailure() = runTest(testDispatcher) {
+    fun fetchCreditPresentmentMessages_whenNoPreferredMessage_returnsNull() = runTest(testDispatcher) {
         val responseJson = """{"messages":[{}]}"""
         val braintreeClient = MockkBraintreeClientBuilder()
             .configurationSuccess(mockConfiguration())
@@ -185,29 +194,35 @@ class PayPalPaymentMethodClientUnitTest {
         coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
 
         val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
-        val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+        val request = PayPalCreditMessagingRequest(
+            flowContext = FlowContext(),
+            messagePlacements = listOf(
+                MessagePlacement(amount = Amount(currencyCode = "USD", value = "55.00"))
+            )
+        )
 
         val result = sut.fetchCreditPresentmentMessages(request)
 
-        assertTrue(result is PayPalCreditMessagingResult.Failure)
-        val error = (result as PayPalCreditMessagingResult.Failure).error
-        assertEquals("No preferred_message returned", error.message)
+        assertNull(result)
     }
 
     @Test
-    fun fetchCreditPresentmentMessages_whenNetworkError_returnsFailure() = runTest(testDispatcher) {
+    fun fetchCreditPresentmentMessages_whenNetworkError_returnsNull() = runTest(testDispatcher) {
         val braintreeClient = MockkBraintreeClientBuilder()
             .configurationSuccess(mockConfiguration())
             .build()
         coEvery { braintreeClient.sendPOST(url = any(), data = any()) } throws IOException("network down")
 
         val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
-        val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+        val request = PayPalCreditMessagingRequest(
+            flowContext = FlowContext(),
+            messagePlacements = listOf(
+                MessagePlacement(amount = Amount(currencyCode = "USD", value = "55.00"))
+            )
+        )
 
         val result = sut.fetchCreditPresentmentMessages(request)
 
-        assertTrue(result is PayPalCreditMessagingResult.Failure)
-        val error = (result as PayPalCreditMessagingResult.Failure).error
-        assertEquals("network down", error.message)
+        assertNull(result)
     }
 }

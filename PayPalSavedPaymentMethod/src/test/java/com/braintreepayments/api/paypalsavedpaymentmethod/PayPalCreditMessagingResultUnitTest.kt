@@ -3,6 +3,7 @@ package com.braintreepayments.api.paypalsavedpaymentmethod
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -10,7 +11,7 @@ import org.junit.Test
 class PayPalCreditMessagingResultUnitTest {
 
     @Test
-    fun fromJson_parsesPreferredMessageContentAndSelectionReasons() {
+    fun fromJson_parsesPreferredMessageContentAndLearnMoreAction() {
         val messageJson = JSONObject(
             """
             {"preferred_message":{"id":"msg-1","type":"PLLT_MQ_GZ",
@@ -29,26 +30,23 @@ class PayPalCreditMessagingResultUnitTest {
             """.trimIndent()
         )
 
-        val message = PayPalCreditMessage.fromJson(messageJson)
+        val result = PayPalCreditMessagingResult.fromJson(messageJson)
 
-        assertEquals("msg-1", message.id)
-        assertEquals("PLLT_MQ_GZ", message.type)
-        assertEquals(2, message.mainItems.size)
-        assertEquals("TEXT", message.mainItems[0].type)
-        assertEquals("As low as \$10/mo", message.mainItems[0].text)
-        assertEquals("paypal_logo", message.mainItems[1].name)
-        assertEquals("https://paypal.com/logo.png", message.mainItems[1].sourceUrl)
-        assertEquals("PayPal", message.mainItems[1].alternativeText)
+        assertEquals("msg-1", result.messageId)
+        assertEquals("PLLT_MQ_GZ", result.messageType)
+        assertEquals(2, result.messageItems.size)
 
-        assertEquals(1, message.actionItems.size)
-        assertEquals("Learn more", message.actionItems[0].text)
-        assertEquals("https://paypal.com/learn", message.actionItems[0].clickUrl)
-        assertTrue(message.actionItems[0].embeddable)
+        val textItem = result.messageItems[0] as MessageItem.Text
+        assertEquals("As low as \$10/mo", textItem.text)
 
-        assertEquals("https://paypal.com/impression", message.impressionUrl)
-        assertEquals(1, message.selectionReasons.size)
-        assertEquals("DEFAULT_PREFERRED", message.selectionReasons[0].code)
-        assertEquals("default", message.selectionReasons[0].description)
+        val imageItem = result.messageItems[1] as MessageItem.Image
+        assertEquals("paypal_logo", imageItem.name)
+        assertEquals("https://paypal.com/logo.png", imageItem.sourceUrl)
+        assertEquals("PayPal", imageItem.alternativeText)
+
+        assertEquals("Learn more", result.learnMoreText)
+        assertEquals("https://paypal.com/learn", result.learnMoreUrl)
+        assertEquals("https://paypal.com/impression", result.impressionUrl)
     }
 
     @Test
@@ -57,12 +55,12 @@ class PayPalCreditMessagingResultUnitTest {
             """{"preferred_message":{"id":"msg-2","type":"PLLT_MQ_GZ"}}"""
         )
 
-        val message = PayPalCreditMessage.fromJson(messageJson)
+        val result = PayPalCreditMessagingResult.fromJson(messageJson)
 
-        assertEquals("msg-2", message.id)
-        assertTrue(message.mainItems.isEmpty())
-        assertTrue(message.actionItems.isEmpty())
-        assertEquals(null, message.impressionUrl)
-        assertTrue(message.selectionReasons.isEmpty())
+        assertEquals("msg-2", result.messageId)
+        assertTrue(result.messageItems.isEmpty())
+        assertNull(result.learnMoreText)
+        assertNull(result.learnMoreUrl)
+        assertNull(result.impressionUrl)
     }
 }

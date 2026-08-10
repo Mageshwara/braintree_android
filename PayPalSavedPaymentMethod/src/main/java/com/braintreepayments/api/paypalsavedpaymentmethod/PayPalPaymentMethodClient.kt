@@ -172,13 +172,14 @@ class PayPalPaymentMethodClient internal constructor(
      * `suspend` variant: call from a coroutine to receive the result directly as the return value.
      *
      * @param request [PayPalCreditMessagingRequest]
-     * @return [PayPalCreditMessagingResult]
+     * @return [PayPalCreditMessagingResult], or null if the fetch fails or returns no
+     * `preferred_message` - callers should hide the messaging row; the FI card still renders.
      */
     @ExperimentalBetaApi
     @Suppress("TooGenericExceptionCaught")
     suspend fun fetchCreditPresentmentMessages(
         request: PayPalCreditMessagingRequest
-    ): PayPalCreditMessagingResult = try {
+    ): PayPalCreditMessagingResult? = try {
         val configuration = braintreeClient.getConfiguration()
         val baseUrl = when (configuration.environment) {
             "production" -> PRODUCTION_BASE_URL
@@ -188,34 +189,20 @@ class PayPalPaymentMethodClient internal constructor(
             url = "$baseUrl/v2/credit/fetch-presentment-messages",
             data = request.build().toString()
         )
-        parseCreditMessagingResponse(responseBody)
+        JSONObject(responseBody)
+            .optJSONArray(MESSAGES_KEY)
+            ?.optJSONObject(0)
+            ?.takeIf { it.has(PREFERRED_MESSAGE_KEY) }
+            ?.let { PayPalCreditMessagingResult.fromJson(it) }
     } catch (e: Exception) {
         if (e is CancellationException) throw e
-        creditMessagingFailure(e)
-    }
-
-    @OptIn(ExperimentalBetaApi::class)
-    private fun parseCreditMessagingResponse(responseBody: String): PayPalCreditMessagingResult {
-        val messageJson = JSONObject(responseBody)
-            .optJSONArray("messages")
-            ?.optJSONObject(0)
-            ?.takeIf { it.has("preferred_message") }
-            ?: return creditMessagingFailure(
-                PayPalCreditMessagingError("No preferred_message returned")
-            )
-
-        return PayPalCreditMessagingResult.Success(PayPalCreditMessage.fromJson(messageJson))
-    }
-
-    @OptIn(ExperimentalBetaApi::class)
-    private fun creditMessagingFailure(error: Exception): PayPalCreditMessagingResult.Failure {
-        val creditMessagingError = error as? PayPalCreditMessagingError
-            ?: PayPalCreditMessagingError(error.message ?: "Credit messaging failed", error)
-        return PayPalCreditMessagingResult.Failure(creditMessagingError)
+        null
     }
 
     companion object {
         private const val PRODUCTION_BASE_URL = "https://api.paypal.com"
         private const val SANDBOX_BASE_URL = "https://api.sandbox.paypal.com"
+        private const val MESSAGES_KEY = "messages"
+        private const val PREFERRED_MESSAGE_KEY = "preferred_message"
     }
 }

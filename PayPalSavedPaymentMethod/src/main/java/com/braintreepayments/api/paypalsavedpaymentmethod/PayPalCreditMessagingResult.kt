@@ -4,164 +4,124 @@ import com.braintreepayments.api.core.ExperimentalBetaApi
 import org.json.JSONObject
 
 /**
- * A single copy or logo block making up a presentment message, from `preferred_message.content.main_items`.
+ * A single copy or logo block making up a presentment message, from
+ * `preferred_message.content.main_items`.
  *
  * Note: **This module is in beta. It's public API may change or be removed in future releases.**
- *
- * @property type Block type, e.g. "TEXT", "TEXT_VARIABLE", or "IMAGE".
- * @property text Copy for a text block.
- * @property name Variable name for the block, e.g. "periodic_payment_count" or "paypal_logo".
- * @property sourceUrl Image URL for an image block.
- * @property alternativeText Accessibility text for an image block.
  */
 @ExperimentalBetaApi
-data class PayPalCreditMessagingContentItem(
-    val type: String,
-    val text: String? = null,
-    val name: String? = null,
-    val sourceUrl: String? = null,
-    val alternativeText: String? = null
-) {
-    companion object {
-        internal fun fromJson(json: JSONObject): PayPalCreditMessagingContentItem {
-            return PayPalCreditMessagingContentItem(
-                type = json.optString("type"),
-                text = json.optString("text").takeIf { json.has("text") },
-                name = json.optString("name").takeIf { json.has("name") },
-                sourceUrl = json.optString("source_url").takeIf { json.has("source_url") },
-                alternativeText = json.optString("alternative_text").takeIf {
-                    json.has("alternative_text")
-                }
-            )
+sealed class MessageItem {
+
+    /**
+     * A text block.
+     *
+     * @property text Copy for the block.
+     * @property name Variable name for the block, e.g. "periodic_payment_count".
+     */
+    data class Text(val text: String, val name: String? = null) : MessageItem()
+
+    /**
+     * An image block, e.g. the PayPal logo. Callers should skip rendering these - the FI row
+     * already shows the payment logo, so the message row is copy-only.
+     *
+     * @property sourceUrl Image URL.
+     * @property alternativeText Accessibility text for the image.
+     * @property name Variable name for the block, e.g. "paypal_logo".
+     */
+    data class Image(
+        val sourceUrl: String,
+        val alternativeText: String? = null,
+        val name: String? = null
+    ) : MessageItem()
+
+    internal companion object {
+
+        private const val TYPE_KEY = "type"
+        private const val TEXT_KEY = "text"
+        private const val NAME_KEY = "name"
+        private const val SOURCE_URL_KEY = "source_url"
+        private const val ALTERNATIVE_TEXT_KEY = "alternative_text"
+        private const val IMAGE_TYPE = "IMAGE"
+
+        fun fromJson(json: JSONObject): MessageItem {
+            val name = json.optString(NAME_KEY).takeIf { json.has(NAME_KEY) }
+            return if (json.optString(TYPE_KEY) == IMAGE_TYPE) {
+                Image(
+                    sourceUrl = json.optString(SOURCE_URL_KEY),
+                    alternativeText = json.optString(ALTERNATIVE_TEXT_KEY)
+                        .takeIf { json.has(ALTERNATIVE_TEXT_KEY) },
+                    name = name
+                )
+            } else {
+                Text(text = json.optString(TEXT_KEY), name = name)
+            }
         }
     }
 }
 
 /**
- * A tappable action on a presentment message, e.g. the "Learn more" link, from
- * `preferred_message.content.action_items`.
+ * The parsed result of a successful `/v2/credit/fetch-presentment-messages` fetch, flattened from
+ * `messages[0].preferred_message`. A null result (fetch failed or no `preferred_message`) means the
+ * messaging row should be hidden - the FI card still renders.
  *
  * Note: **This module is in beta. It's public API may change or be removed in future releases.**
  *
- * @property type Action type, e.g. "LINK".
- * @property text Display text for the action, e.g. "Learn more".
- * @property clickUrl URL to open when the action is tapped.
- * @property embeddable Whether [clickUrl] should be opened in-app rather than an external browser.
- */
-@ExperimentalBetaApi
-data class PayPalCreditMessagingActionItem(
-    val type: String,
-    val text: String? = null,
-    val clickUrl: String? = null,
-    val embeddable: Boolean = false
-) {
-    companion object {
-        internal fun fromJson(json: JSONObject): PayPalCreditMessagingActionItem {
-            return PayPalCreditMessagingActionItem(
-                type = json.optString("type"),
-                text = json.optString("text").takeIf { json.has("text") },
-                clickUrl = json.optString("click_url").takeIf { json.has("click_url") },
-                embeddable = json.optBoolean("embeddable", false)
-            )
-        }
-    }
-}
-
-/**
- * Why a given message was selected as the preferred message, from `messages[].selection_reasons`.
- *
- * Note: **This module is in beta. It's public API may change or be removed in future releases.**
- *
- * @property code Reason code, e.g. "DEFAULT_PREFERRED".
- * @property description Human-readable description of the reason.
- */
-@ExperimentalBetaApi
-data class PayPalCreditMessageSelectionReason(
-    val code: String? = null,
-    val description: String? = null
-) {
-    companion object {
-        internal fun fromJson(json: JSONObject): PayPalCreditMessageSelectionReason {
-            return PayPalCreditMessageSelectionReason(
-                code = json.optString("code").takeIf { json.has("code") },
-                description = json.optString("description").takeIf { json.has("description") }
-            )
-        }
-    }
-}
-
-/**
- * The preferred presentment message returned by `/v2/credit/fetch-presentment-messages`.
- *
- * Note: **This module is in beta. It's public API may change or be removed in future releases.**
- *
- * @property id The message id.
- * @property type The message template id, e.g. "PLLT_MQ_GZ".
- * @property mainItems Logo + copy blocks to render inline.
- * @property actionItems CTA blocks, e.g. the "Learn more" link.
+ * @property messageId The message id.
+ * @property messageType The message template id, e.g. "PLLT_MQ_GZ".
+ * @property messageItems Copy + logo blocks to render inline, from `content.main_items`.
+ * @property learnMoreText Display text for the "Learn more" action, if present.
+ * @property learnMoreUrl URL to open when "Learn more" is tapped, if present.
  * @property impressionUrl Analytics URL to fire when the message is displayed.
- * @property selectionReasons Why this message was chosen, from `messages[].selection_reasons`.
  */
 @ExperimentalBetaApi
-data class PayPalCreditMessage(
-    val id: String,
-    val type: String,
-    val mainItems: List<PayPalCreditMessagingContentItem>,
-    val actionItems: List<PayPalCreditMessagingActionItem>,
-    val impressionUrl: String?,
-    val selectionReasons: List<PayPalCreditMessageSelectionReason>
+data class PayPalCreditMessagingResult(
+    val messageId: String,
+    val messageType: String,
+    val messageItems: List<MessageItem>,
+    val learnMoreText: String?,
+    val learnMoreUrl: String?,
+    val impressionUrl: String?
 ) {
-    companion object {
-        internal fun fromJson(messageJson: JSONObject): PayPalCreditMessage {
-            val preferredMessage = messageJson.optJSONObject("preferred_message") ?: JSONObject()
-            val content = preferredMessage.optJSONObject("content")
-            val mainItems = content?.optJSONArray("main_items")?.let { items ->
-                (0 until items.length()).map {
-                    PayPalCreditMessagingContentItem.fromJson(items.getJSONObject(it))
-                }
-            } ?: emptyList()
-            val actionItems = content?.optJSONArray("action_items")?.let { items ->
-                (0 until items.length()).map {
-                    PayPalCreditMessagingActionItem.fromJson(items.getJSONObject(it))
-                }
-            } ?: emptyList()
-            val impressionUrl = preferredMessage.optJSONObject("analytics")
-                ?.optString("impression_url")
-                ?.takeIf { it.isNotEmpty() }
-            val selectionReasons = messageJson.optJSONArray("selection_reasons")?.let { items ->
-                (0 until items.length()).map {
-                    PayPalCreditMessageSelectionReason.fromJson(items.getJSONObject(it))
-                }
-            } ?: emptyList()
 
-            return PayPalCreditMessage(
-                id = preferredMessage.optString("id"),
-                type = preferredMessage.optString("type"),
-                mainItems = mainItems,
-                actionItems = actionItems,
-                impressionUrl = impressionUrl,
-                selectionReasons = selectionReasons
+    internal companion object {
+
+        private const val PREFERRED_MESSAGE_KEY = "preferred_message"
+        private const val ID_KEY = "id"
+        private const val TYPE_KEY = "type"
+        private const val CONTENT_KEY = "content"
+        private const val MAIN_ITEMS_KEY = "main_items"
+        private const val ACTION_ITEMS_KEY = "action_items"
+        private const val ACTION_TYPE_KEY = "type"
+        private const val LINK_TYPE = "LINK"
+        private const val TEXT_KEY = "text"
+        private const val CLICK_URL_KEY = "click_url"
+        private const val ANALYTICS_KEY = "analytics"
+        private const val IMPRESSION_URL_KEY = "impression_url"
+
+        fun fromJson(messageJson: JSONObject): PayPalCreditMessagingResult {
+            val preferredMessage = messageJson.optJSONObject(PREFERRED_MESSAGE_KEY) ?: JSONObject()
+            val content = preferredMessage.optJSONObject(CONTENT_KEY)
+
+            val messageItems = content?.optJSONArray(MAIN_ITEMS_KEY)?.let { items ->
+                (0 until items.length()).map { MessageItem.fromJson(items.getJSONObject(it)) }
+            }.orEmpty()
+
+            val learnMoreAction = content?.optJSONArray(ACTION_ITEMS_KEY)?.let { items ->
+                (0 until items.length())
+                    .map { items.getJSONObject(it) }
+                    .firstOrNull { it.optString(ACTION_TYPE_KEY) == LINK_TYPE }
+            }
+
+            return PayPalCreditMessagingResult(
+                messageId = preferredMessage.optString(ID_KEY),
+                messageType = preferredMessage.optString(TYPE_KEY),
+                messageItems = messageItems,
+                learnMoreText = learnMoreAction?.optString(TEXT_KEY)?.takeIf { it.isNotEmpty() },
+                learnMoreUrl = learnMoreAction?.optString(CLICK_URL_KEY)?.takeIf { it.isNotEmpty() },
+                impressionUrl = preferredMessage.optJSONObject(ANALYTICS_KEY)
+                    ?.optString(IMPRESSION_URL_KEY)
+                    ?.takeIf { it.isNotEmpty() }
             )
         }
     }
-}
-
-/**
- * The result of fetching credit presentment messaging.
- *
- * Note: **This module is in beta. It's public API may change or be removed in future releases.**
- */
-@ExperimentalBetaApi
-sealed class PayPalCreditMessagingResult {
-
-    /**
-     * The request succeeded and returned a [PayPalCreditMessage] to render.
-     */
-    data class Success(val message: PayPalCreditMessage) : PayPalCreditMessagingResult()
-
-    /**
-     * The request failed, or returned no `preferred_message`. Callers should hide the
-     * messaging row; the FI card / rest of the UI still renders.
-     */
-    data class Failure(val error: PayPalCreditMessagingError) : PayPalCreditMessagingResult()
 }
