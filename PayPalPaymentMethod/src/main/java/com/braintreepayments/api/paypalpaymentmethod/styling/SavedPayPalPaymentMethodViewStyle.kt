@@ -16,8 +16,6 @@ import androidx.annotation.FontRes
  * Scope: single-row layout, light theme only. Dark theme, responsive stacked layout, and logo
  * box-scaling are deliberately deferred.
  */
-
-// ── Root ─────────────────────────────────────────────────────────────
 data class SavedPayPalPaymentMethodViewStyle(
     val showLogo: Boolean = true,
     val showLabel: Boolean = true,
@@ -26,24 +24,33 @@ data class SavedPayPalPaymentMethodViewStyle(
     val container: ContainerStyle = ContainerStyle()
 )
 
-// ── Colors, fonts, brand identity ──────────────────────────────────────
+/**
+ * Colors, fonts, and brand identity.
+ *
+ * @param linkColor when null, credit-messaging links fall back to bold+underline in
+ * [textColorBase].
+ */
 data class ThemeStyle(
     @ColorInt val backgroundColor: Int = Color.WHITE,
     @ColorInt val textColorBase: Int = Color.parseColor("#222222"),
-    val baseFontSizeSp: Float = 14f, // currently unused — kept for later
+    val baseFontSizeSp: Float = 14f,
     @FontRes val fontResId: Int? = null,
-    @ColorInt val linkColor: Int? = null // null -> bold+underline fallback in textColorBase
+    @ColorInt val linkColor: Int? = null
 )
 
-// ── Outer box (own shape) + its four children's styles ────────────────
+/**
+ * The outer box (own shape) plus its four children's styles.
+ *
+ * @param heightDp when null, the container wraps content; never clamped.
+ */
 @Suppress("MagicNumber")
 data class ContainerStyle(
-    val heightDp: Float? = null, // null -> wrap-content; never clamped
-    val horizontalPaddingDp: Float = 0f, // floor 0, no max
-    val verticalPaddingDp: Float = 10f, // floor 0, no max
-    val cornerRadiusDp: Float = 0f, // floor 0, no max
+    val heightDp: Float? = null,
+    val horizontalPaddingDp: Float = 0f,
+    val verticalPaddingDp: Float = 10f,
+    val cornerRadiusDp: Float = 0f,
     @ColorInt val borderColor: Int = Color.TRANSPARENT,
-    val borderWidthDp: Float = 0f, // floor 0, no max
+    val borderWidthDp: Float = 0f,
 
     val logo: LogoStyle = LogoStyle(),
     val label: LabelStyle = LabelStyle(),
@@ -51,33 +58,52 @@ data class ContainerStyle(
     val creditMessaging: CreditMessagingStyle = CreditMessagingStyle()
 )
 
+/**
+ * @param widthDp Figma: "Payment Card Thumbnail", 48x30 (height follows source aspect ratio). Logo
+ * is the first child, so its start offset comes from [ContainerStyle.horizontalPaddingDp], not its
+ * own margin.
+ */
 @Suppress("MagicNumber")
 data class LogoStyle(
-    val widthDp: Float = 24f
-    // no marginStart — Logo is the first child; its start offset is
-    // ContainerStyle.horizontalPaddingDp, not its own margin.
+    val widthDp: Float = 48f
 )
 
+/**
+ * @param fontSizeSp Figma-sourced default (intentionally differs from web's 14px).
+ * @param marginStartDp gap from Logo (Figma: "Pay with" / Marks Message V2, 12.727px).
+ */
 @Suppress("MagicNumber")
 data class LabelStyle(
-    val fontSizeSp: Float = 20f, // Figma-sourced default (intentionally differs from web's 14px)
-    val marginStartDp: Float = 6f // gap from Logo
+    val fontSizeSp: Float = 20f,
+    val marginStartDp: Float = 13f
 )
 
+/**
+ * @param iconWidthDp Figma: "Funding Icon", 27.87x20.72 (height follows source aspect ratio).
+ * @param marginStartDp gap from Label; collapses toward Logo if Label is hidden.
+ * @param backgroundColor Figma: Edit FI Chip background.
+ * @param cornerRadiusDp Figma: Edit FI Chip corner radius.
+ * @param horizontalPaddingDp Figma: Edit FI Chip / FI w edit, left+right padding.
+ * @param verticalPaddingDp Figma: Edit FI Chip / FI w edit, top+bottom padding.
+ */
 @Suppress("MagicNumber")
 data class FiClusterStyle(
     val textFontSizeSp: Float = 14f,
     val editIconSizeDp: Float = 16f,
-    val marginStartDp: Float = 12f, // gap from Label; collapses toward Logo if Label is hidden
-    @ColorInt val backgroundColor: Int = Color.parseColor("#F0F0F0"), // DTC — pill background
-    val cornerRadiusDp: Float = 999f, // DTC — pill shape
-    val paddingDp: Float = 4f // DTC — pill internal padding
+    val iconWidthDp: Float = 28f,
+    val marginStartDp: Float = 8f,
+    @ColorInt val backgroundColor: Int = Color.parseColor("#F0F2F9"),
+    val cornerRadiusDp: Float = 6f,
+    val horizontalPaddingDp: Float = 8f,
+    val verticalPaddingDp: Float = 4f
 )
 
+/**
+ * `messageText` / `learnMoreText` / `learnMoreUrl` are deliberately absent — that's
+ * compliance content from the API (see `CreditMessagingState`), never merchant-authored via
+ * style.
+ */
 @Suppress("MagicNumber")
 data class CreditMessagingStyle(
     val fontSizeSp: Float = 16f
-    // messageText / learnMoreText / learnMoreUrl deliberately absent —
-    // compliance content from the API (see CreditMessagingState), never
-    // merchant-authored via style.
 )
