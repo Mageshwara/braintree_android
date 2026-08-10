@@ -120,7 +120,7 @@ class PayPalPaymentMethodClientUnitTest {
         val payPalRequest = PayPalCheckoutRequest(amount = "1.00", hasUserLocationConsent = true)
         val requestSlot = slot<PayPalCheckoutRequest>()
 
-        val sut = SavedPayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
 
         sut.createPaymentAuthRequest(context, payPalRequest, "edit-jwt", callback)
 
