@@ -145,6 +145,7 @@ abstract class PayPalRequest internal constructor(
         internal const val ENABLE_APP_SWITCH_KEY: String = "launch_paypal_app"
         internal const val APP_SWITCH_CONTEXT_KEY: String = "app_switch_context"
         internal const val MERCHANT_APP_RETURN_URL_KEY: String = "merchant_app_return_url"
+        internal const val EDIT_BILLING_AGREEMENT_JWT_KEY: String = "edit_billing_agreement_jwt"
         internal const val OS_VERSION_KEY: String = "os_version"
         internal const val OS_TYPE_KEY: String = "os_type"
         internal const val PLAN_TYPE_KEY: String = "plan_type"

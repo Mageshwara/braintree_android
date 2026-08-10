@@ -74,6 +74,9 @@ import org.json.JSONObject
  * @property amountBreakdown Breakdown of items associated to the total cost
  *
  * @property shouldOfferCredit Offers PayPal Credit if the customer qualifies. Defaults to false.
+ *
+ * @property editBillingAgreementJwt JWT identifying the billing agreement to edit the sticky
+ * funding instrument for, used to seed the edit-FI order during `create_payment_resource`.
  */
 @Parcelize
 class PayPalCheckoutRequest @JvmOverloads constructor(
@@ -104,6 +107,7 @@ class PayPalCheckoutRequest @JvmOverloads constructor(
     override var recurringBillingPlanType: PayPalRecurringBillingPlanType? = null,
     var amountBreakdown: AmountBreakdown? = null,
     override var shouldOfferCredit: Boolean = false,
+    var editBillingAgreementJwt: String? = null,
 ) : PayPalRequest(
     hasUserLocationConsent = hasUserLocationConsent,
     localeCode = localeCode,
@@ -178,6 +182,8 @@ class PayPalCheckoutRequest @JvmOverloads constructor(
         }
 
         parameters.putOpt(SHOPPER_SESSION_ID_KEY, shopperSessionId)
+
+        editBillingAgreementJwt?.let { parameters.put(EDIT_BILLING_AGREEMENT_JWT_KEY, it) }
 
         if (currencyCode == null) {
             currencyCode = configuration?.payPalCurrencyIsoCode

@@ -1,11 +1,15 @@
 package com.braintreepayments.api.paypalpaymentmethod
 
+import android.content.Context
 import com.braintreepayments.api.core.ExperimentalBetaApi
+import com.braintreepayments.api.paypal.PayPalCheckoutRequest
 import com.braintreepayments.api.paypal.PayPalClient
+import com.braintreepayments.api.paypal.PayPalPaymentAuthCallback
 import com.braintreepayments.api.testutils.MockkBraintreeClientBuilder
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -106,5 +110,23 @@ class PayPalPaymentMethodClientUnitTest {
 
         assertTrue(result is PayPalPaymentMethodSummaryResult.Failure)
         assertTrue((result as PayPalPaymentMethodSummaryResult.Failure).error is IOException)
+    }
+
+    @Test
+    fun createPaymentAuthRequest_withPayPalCheckoutRequest_setsEditBillingAgreementJwtAndDelegates() {
+        val braintreeClient = MockkBraintreeClientBuilder().build()
+        val context = mockk<Context>(relaxed = true)
+        val callback = mockk<PayPalPaymentAuthCallback>(relaxed = true)
+        val payPalRequest = PayPalCheckoutRequest(amount = "1.00", hasUserLocationConsent = true)
+        val requestSlot = slot<PayPalCheckoutRequest>()
+
+        val sut = SavedPayPalPaymentMethodClient(braintreeClient, payPalClient)
+
+        sut.createPaymentAuthRequest(context, payPalRequest, "edit-jwt", callback)
+
+        verify {
+            payPalClient.createPaymentAuthRequest(context, capture(requestSlot), callback)
+        }
+        assertEquals("edit-jwt", requestSlot.captured.editBillingAgreementJwt)
     }
 }

@@ -5,9 +5,9 @@ import android.net.Uri
 import com.braintreepayments.api.core.BraintreeClient
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.core.GraphQLConstants
+import com.braintreepayments.api.paypal.PayPalCheckoutRequest
 import com.braintreepayments.api.paypal.PayPalClient
 import com.braintreepayments.api.paypal.PayPalPaymentAuthCallback
-import com.braintreepayments.api.paypal.PayPalRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,16 +59,24 @@ class PayPalPaymentMethodClient internal constructor(
      * Starts the PayPal payment auth flow for the edit-FI checkout using the provided
      * [payPalRequest].
      *
+     * Sets [editBillingAgreementJwt] on [payPalRequest] to seed the edit-FI order.
+     *
      * @param context       Android Context
-     * @param payPalRequest a [PayPalRequest] used to customize the request.
+     * @param payPalRequest a [PayPalCheckoutRequest] used to customize the request.
+     * @param editBillingAgreementJwt the JWT identifying the billing agreement whose sticky funding
+     * instrument is being edited.
      * @param callback      [PayPalPaymentAuthCallback]
      */
     @ExperimentalBetaApi
     fun createPaymentAuthRequest(
         context: Context,
-        payPalRequest: PayPalRequest,
+        payPalRequest: PayPalCheckoutRequest,
+        editBillingAgreementJwt: String,
         callback: PayPalPaymentAuthCallback
-    ) = payPalClient.createPaymentAuthRequest(context, payPalRequest, callback)
+    ) {
+        payPalRequest.editBillingAgreementJwt = editBillingAgreementJwt
+        payPalClient.createPaymentAuthRequest(context, payPalRequest, callback)
+    }
 
     /**
      * Fetches the sticky (default) vaulted funding instrument for display.
