@@ -165,4 +165,57 @@ class PayPalPaymentMethodClient internal constructor(
             if (e is CancellationException) throw e
             PayPalPaymentMethodSummaryResult.Failure(e)
         }
+
+    /**
+     * Fetches PayPal Pay Later / Credit presentment messaging for the edit-FI row.
+     *
+     * `suspend` variant: call from a coroutine to receive the result directly as the return value.
+     *
+     * @param request [PayPalCreditMessagingRequest]
+     * @return [PayPalCreditMessagingResult]
+     */
+    @ExperimentalBetaApi
+    @Suppress("TooGenericExceptionCaught")
+    suspend fun fetchCreditPresentmentMessages(
+        request: PayPalCreditMessagingRequest
+    ): PayPalCreditMessagingResult = try {
+        val configuration = braintreeClient.getConfiguration()
+        val baseUrl = when (configuration.environment) {
+            "production" -> PRODUCTION_BASE_URL
+            else -> SANDBOX_BASE_URL
+        }
+        val responseBody = braintreeClient.sendPOST(
+            url = "$baseUrl/v2/credit/fetch-presentment-messages",
+            data = request.build().toString()
+        )
+        parseCreditMessagingResponse(responseBody)
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        creditMessagingFailure(e)
+    }
+
+    @OptIn(ExperimentalBetaApi::class)
+    private fun parseCreditMessagingResponse(responseBody: String): PayPalCreditMessagingResult {
+        val messageJson = JSONObject(responseBody)
+            .optJSONArray("messages")
+            ?.optJSONObject(0)
+            ?.takeIf { it.has("preferred_message") }
+            ?: return creditMessagingFailure(
+                PayPalCreditMessagingError("No preferred_message returned")
+            )
+
+        return PayPalCreditMessagingResult.Success(PayPalCreditMessage.fromJson(messageJson))
+    }
+
+    @OptIn(ExperimentalBetaApi::class)
+    private fun creditMessagingFailure(error: Exception): PayPalCreditMessagingResult.Failure {
+        val creditMessagingError = error as? PayPalCreditMessagingError
+            ?: PayPalCreditMessagingError(error.message ?: "Credit messaging failed", error)
+        return PayPalCreditMessagingResult.Failure(creditMessagingError)
+    }
+
+    companion object {
+        private const val PRODUCTION_BASE_URL = "https://api.paypal.com"
+        private const val SANDBOX_BASE_URL = "https://api.sandbox.paypal.com"
+    }
 }

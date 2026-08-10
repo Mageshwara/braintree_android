@@ -1,9 +1,11 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod
 
+import com.braintreepayments.api.core.Configuration
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypal.PayPalClient
 import com.braintreepayments.api.testutils.MockkBraintreeClientBuilder
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,6 +25,11 @@ class PayPalPaymentMethodClientUnitTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val payPalClient = mockk<PayPalClient>(relaxed = true)
+
+    private fun mockConfiguration(env: String = "production"): Configuration =
+        mockk(relaxed = true) {
+            every { environment } returns env
+        }
 
     @Test
     fun fetchFI_withJwt_postsStickyFiBodyAndReturnsSuccess() = runTest(testDispatcher) {
@@ -106,5 +113,101 @@ class PayPalPaymentMethodClientUnitTest {
 
         assertTrue(result is PayPalPaymentMethodSummaryResult.Failure)
         assertTrue((result as PayPalPaymentMethodSummaryResult.Failure).error is IOException)
+    }
+
+    @Test
+    fun fetchCreditPresentmentMessages_postsRequestBodyToCreditUrlAndReturnsSuccess() =
+        runTest(testDispatcher) {
+            val responseJson = """
+                {"messages":[{"preferred_message":{"id":"msg-1","type":"PLLT_MQ_GZ",
+                  "content":{"main_items":[{"type":"TEXT","text":"As low as \${'$'}10/mo"}],
+                  "action_items":[{"type":"LINK","text":"Learn more","click_url":"https://paypal.com/learn"}]},
+                  "analytics":{"impression_url":"https://paypal.com/impression"}},
+                  "selection_reasons":[{"code":"DEFAULT_PREFERRED","description":"default"}]}]}
+            """.trimIndent()
+            val urlSlot = slot<String>()
+            val bodySlot = slot<String>()
+            val braintreeClient = MockkBraintreeClientBuilder()
+                .configurationSuccess(mockConfiguration())
+                .build()
+            coEvery {
+                braintreeClient.sendPOST(url = capture(urlSlot), data = capture(bodySlot))
+            } returns responseJson
+
+            val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+            val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+
+            val result = sut.fetchCreditPresentmentMessages(request)
+
+            assertEquals(
+                "https://api.paypal.com/v2/credit/fetch-presentment-messages",
+                urlSlot.captured
+            )
+            assertEquals(request.build().toString(), bodySlot.captured)
+            assertTrue(result is PayPalCreditMessagingResult.Success)
+            val message = (result as PayPalCreditMessagingResult.Success).message
+            assertEquals("msg-1", message.id)
+            assertEquals("PLLT_MQ_GZ", message.type)
+            assertEquals("Learn more", message.actionItems.first().text)
+            assertEquals("https://paypal.com/impression", message.impressionUrl)
+            assertEquals("DEFAULT_PREFERRED", message.selectionReasons.first().code)
+        }
+
+    @Test
+    fun fetchCreditPresentmentMessages_whenEnvironmentIsNotProduction_postsToSandboxUrl() =
+        runTest(testDispatcher) {
+            val responseJson = """{"messages":[{"preferred_message":{"id":"msg-1","type":"PLLT_MQ_GZ"}}]}"""
+            val urlSlot = slot<String>()
+            val braintreeClient = MockkBraintreeClientBuilder()
+                .configurationSuccess(mockConfiguration(env = "sandbox"))
+                .build()
+            coEvery {
+                braintreeClient.sendPOST(url = capture(urlSlot), data = any())
+            } returns responseJson
+
+            val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+            val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+
+            sut.fetchCreditPresentmentMessages(request)
+
+            assertEquals(
+                "https://api.sandbox.paypal.com/v2/credit/fetch-presentment-messages",
+                urlSlot.captured
+            )
+        }
+
+    @Test
+    fun fetchCreditPresentmentMessages_whenNoPreferredMessage_returnsFailure() = runTest(testDispatcher) {
+        val responseJson = """{"messages":[{}]}"""
+        val braintreeClient = MockkBraintreeClientBuilder()
+            .configurationSuccess(mockConfiguration())
+            .build()
+        coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
+
+        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+
+        val result = sut.fetchCreditPresentmentMessages(request)
+
+        assertTrue(result is PayPalCreditMessagingResult.Failure)
+        val error = (result as PayPalCreditMessagingResult.Failure).error
+        assertEquals("No preferred_message returned", error.message)
+    }
+
+    @Test
+    fun fetchCreditPresentmentMessages_whenNetworkError_returnsFailure() = runTest(testDispatcher) {
+        val braintreeClient = MockkBraintreeClientBuilder()
+            .configurationSuccess(mockConfiguration())
+            .build()
+        coEvery { braintreeClient.sendPOST(url = any(), data = any()) } throws IOException("network down")
+
+        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val request = PayPalCreditMessagingRequest(amount = "55.00", currencyCode = "USD")
+
+        val result = sut.fetchCreditPresentmentMessages(request)
+
+        assertTrue(result is PayPalCreditMessagingResult.Failure)
+        val error = (result as PayPalCreditMessagingResult.Failure).error
+        assertEquals("network down", error.message)
     }
 }
