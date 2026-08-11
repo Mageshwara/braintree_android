@@ -169,7 +169,28 @@ class PayPalPaymentMethodClient internal constructor(
     /**
      * Fetches PayPal Pay Later / Credit presentment messaging for the edit-FI row.
      *
+     * Callback-based variant: the result is delivered asynchronously to [callback]. Use the
+     * `suspend` [fetchCreditPresentmentMessages] overload when calling from a coroutine.
+     *
+     * @param request  [PayPalCreditMessagingRequest]
+     * @param callback [PayPalCreditMessagingCallback] invoked with the result
+     */
+    @ExperimentalBetaApi
+    fun fetchCreditPresentmentMessages(
+        request: PayPalCreditMessagingRequest,
+        callback: PayPalCreditMessagingCallback
+    ) {
+        coroutineScope.launch {
+            callback.onPayPalCreditMessagingResult(fetchCreditPresentmentMessages(request))
+        }
+    }
+
+    /**
+     * Fetches PayPal Pay Later / Credit presentment messaging for the edit-FI row.
+     *
      * `suspend` variant: call from a coroutine to receive the result directly as the return value.
+     * Use the [fetchCreditPresentmentMessages] overload that takes a
+     * [PayPalCreditMessagingCallback] outside a coroutine.
      *
      * @param request [PayPalCreditMessagingRequest]
      * @return [PayPalCreditMessagingResult], or null if the fetch fails or returns no

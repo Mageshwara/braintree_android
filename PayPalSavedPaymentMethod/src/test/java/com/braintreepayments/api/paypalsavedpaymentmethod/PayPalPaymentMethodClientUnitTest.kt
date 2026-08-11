@@ -8,6 +8,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -205,6 +206,35 @@ class PayPalPaymentMethodClientUnitTest {
 
         assertNull(result)
     }
+
+    @Test
+    fun fetchCreditPresentmentMessages_withCallback_deliversResultAsynchronously() =
+        runTest(testDispatcher) {
+            val responseJson = """{"messages":[{"preferred_message":{"id":"msg-1","type":"PLLT_MQ_GZ"}}]}"""
+            val braintreeClient = MockkBraintreeClientBuilder()
+                .configurationSuccess(mockConfiguration())
+                .build()
+            coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
+
+            val sut = PayPalPaymentMethodClient(
+                braintreeClient,
+                payPalClient,
+                coroutineScope = CoroutineScope(testDispatcher)
+            )
+            val request = PayPalCreditMessagingRequest(
+                flowContext = FlowContext(),
+                messagePlacements = listOf(
+                    MessagePlacement(amount = Amount(currencyCode = "USD", value = "55.00"))
+                )
+            )
+
+            var result: PayPalCreditMessagingResult? = null
+            sut.fetchCreditPresentmentMessages(request) { result = it }
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            requireNotNull(result)
+            assertEquals("msg-1", result?.messageId)
+        }
 
     @Test
     fun fetchCreditPresentmentMessages_whenNetworkError_returnsNull() = runTest(testDispatcher) {
