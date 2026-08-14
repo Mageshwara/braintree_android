@@ -58,6 +58,7 @@ class MainFragment : BaseFragment() {
                                 PaymentModuleButton(R.string.shopper_insights_button) { launchShopperInsights() }
                                 PaymentModuleButton(R.string.shopper_insights_v2_button) { launchShopperInsightsV2() }
                                 PaymentModuleButton(R.string.paypal_messaging_button) { launchPayPalMessaging() }
+                                PaymentModuleButton(R.string.saved_payment_method_button) { launchSavedPaymentMethod() }
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
 
@@ -221,6 +222,14 @@ class MainFragment : BaseFragment() {
     private fun launchComposePaymentButtons() {
         fetchAuthorizationAndHandleError { authString ->
             val action = MainFragmentDirections.actionMainFragmentToComposePaymentButtonsFragment()
+            action.setAuthString(authString)
+            findNavController().navigate(action)
+        }
+    }
+
+    private fun launchSavedPaymentMethod() {
+        fetchAuthorizationAndHandleError { authString ->
+            val action = MainFragmentDirections.actionMainFragmentToSavedPaymentMethodFragment()
             action.setAuthString(authString)
             findNavController().navigate(action)
         }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FiSection -->
+    <dimen name="psp_fi_shimmer_width">80dp</dimen>
+    <dimen name="psp_fi_shimmer_height">16dp</dimen>
+    <dimen name="psp_fi_icon_size">24dp</dimen>
+    <dimen name="psp_fi_text_margin_start">8dp</dimen>
+    <dimen name="psp_fi_edit_icon_size">16dp</dimen>
+    <dimen name="psp_fi_edit_icon_margin_start">8dp</dimen>
+
+    <!-- CreditMessagingView -->
+    <dimen name="psp_credit_messaging_shimmer_width">160dp</dimen>
+    <dimen name="psp_credit_messaging_shimmer_height">16dp</dimen>
+
+    <!-- CreditMessagingLander -->
+    <dimen name="psp_lander_padding">16dp</dimen>
+    <dimen name="psp_lander_close_touch_target_size">32dp</dimen>
+    <dimen name="psp_lander_close_padding">4dp</dimen>
+    <dimen name="psp_lander_webview_height">400dp</dimen>
+</resources>

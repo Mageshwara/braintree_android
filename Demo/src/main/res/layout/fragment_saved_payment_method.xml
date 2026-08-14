@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- ===== Path 1: default style, configured programmatically via setStyle() ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/saved_payment_method_kotlin_style_label" />
+
+        <com.braintreepayments.api.paypalsavedpaymentmethod.component.PayPalSavedPaymentMethodView
+            android:id="@+id/saved_payment_method_view_kotlin_style"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <!-- ===== Path 2: style resolved entirely from XML attrs, no setStyle() call ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/saved_payment_method_xml_style_label" />
+
+        <com.braintreepayments.api.paypalsavedpaymentmethod.component.PayPalSavedPaymentMethodView
+            android:id="@+id/saved_payment_method_view_xml_style"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            custom:componentBackgroundColor="#FFF5E6"
+            custom:componentTextColor="#7A4A00"
+            custom:containerCornerRadiusDp="12dp"
+            custom:containerBorderColor="#FFB74D"
+            custom:containerBorderWidthDp="1dp"
+            custom:containerHorizontalPaddingDp="16dp"
+            custom:containerVerticalPaddingDp="12dp"
+            custom:logoWidthDp="56dp"
+            custom:labelFontSizeSp="16sp"
+            custom:creditMessagingLinkColor="#EF6C00" />
+
+        <Button
+            android:id="@+id/saved_payment_method_refresh_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/saved_payment_method_refresh_button" />
+
+    </LinearLayout>
+</ScrollView>

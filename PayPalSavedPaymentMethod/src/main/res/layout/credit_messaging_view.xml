@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <View
+        android:id="@+id/psp_credit_messaging_shimmer"
+        android:layout_width="@dimen/psp_credit_messaging_shimmer_width"
+        android:layout_height="@dimen/psp_credit_messaging_shimmer_height"
+        android:background="@drawable/psp_shimmer_bar_background" />
+
+    <TextView
+        android:id="@+id/psp_credit_messaging_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</merge>

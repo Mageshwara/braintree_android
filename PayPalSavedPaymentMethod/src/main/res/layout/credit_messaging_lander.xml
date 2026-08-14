@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/psp_bottom_sheet_background"
+    android:paddingTop="@dimen/psp_lander_padding"
+    android:paddingBottom="@dimen/psp_lander_padding">
+
+    <ImageView
+        android:id="@+id/psp_lander_close"
+        android:layout_width="@dimen/psp_lander_close_touch_target_size"
+        android:layout_height="@dimen/psp_lander_close_touch_target_size"
+        android:layout_gravity="end"
+        android:layout_marginEnd="@dimen/psp_lander_padding"
+        android:padding="@dimen/psp_lander_close_padding"
+        android:src="@drawable/ic_close"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/paypal_saved_payment_method_lander_close_content_description" />
+
+    <WebView
+        android:id="@+id/psp_lander_webview"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/psp_lander_webview_height" />
+
+</LinearLayout>
