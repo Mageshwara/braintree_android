@@ -31,7 +31,7 @@ private const val DEFAULT_CREDIT_MESSAGING_FONT_SIZE_SP = 16f
  * Two resolution shapes are used, per the Styling doc's "Key semantics":
  * - Most fields are 2-step: explicit value if set, else the SDK-provided default.
  * - The three font-size fields (label, funding instrument text, credit messaging) are 3-step:
- *   explicit value if set, else [ComponentThemeStyle.baseFontSizeSp] if set, else the
+ *   explicit value if set, else [ComponentAppearance.baseFontSizeSp] if set, else the
  *   SDK-provided default for that element.
  *
  * A few fields are intentionally left nullable in the resolved output rather than defaulted,
@@ -43,17 +43,17 @@ private const val DEFAULT_CREDIT_MESSAGING_FONT_SIZE_SP = 16f
  */
 internal class PayPalSavedPaymentMethodStyleResolver(style: PayPalSavedPaymentMethodViewStyle) {
 
-    val showLogo: Boolean = style.showLogo
-    val showLabel: Boolean = style.showLabel
-    val showCreditMessaging: Boolean = style.showCreditMessaging
+    val showLogo: Boolean = style.showPayPalLogo
+    val showLabel: Boolean = style.showPayPalLabel
+    val showCreditMessaging: Boolean = style.showPayPalCreditMessaging
 
-    private val baseFontSizeSp: Float? = style.componentTheme?.baseFontSizeSp
+    private val baseFontSizeSp: Float? = style.componentAppearance?.baseFontSizeSp
 
     val backgroundColor: Int =
-        style.componentTheme?.backgroundColor ?: DEFAULT_BACKGROUND_COLOR
+        style.componentAppearance?.backgroundColor ?: DEFAULT_BACKGROUND_COLOR
     val textColor: Int =
-        style.componentTheme?.textColor ?: DEFAULT_TEXT_COLOR
-    val fontResId: Int? = style.componentTheme?.fontResId
+        style.componentAppearance?.textColor ?: DEFAULT_TEXT_COLOR
+    val fontResId: Int? = style.componentAppearance?.fontResId
 
     val heightDp: Float? = style.container?.heightDp
     val horizontalPaddingDp: Float =

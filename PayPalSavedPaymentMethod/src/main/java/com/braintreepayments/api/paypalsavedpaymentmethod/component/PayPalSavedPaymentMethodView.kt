@@ -30,12 +30,12 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.callback.PayPalSavedPa
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.CreditMessagingContent
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.CreditMessagingState
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ComponentThemeStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ComponentAppearance
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ContainerStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.CreditMessagingStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.FundingInstrumentStyle
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.LabelStyle
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.LogoStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalLabelStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalLogoStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodStyleResolver
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodViewStyle
 import kotlinx.coroutines.CoroutineScope
@@ -191,7 +191,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
             fiSection.setState(state)
         }
 
-        if (!style.showCreditMessaging) {
+        if (!style.showPayPalCreditMessaging) {
             creditMessagingView.setState(CreditMessagingState.Hidden)
             return
         }
@@ -401,7 +401,7 @@ private fun styleFromAttrs(
         val density = context.resources.displayMetrics.density
         val scaledDensity = context.resources.displayMetrics.scaledDensity
 
-        val componentTheme = ComponentThemeStyle(
+        val componentTheme = ComponentAppearance(
             backgroundColor = typedArray.colorOrNull(R.styleable.PayPalSavedPaymentMethodView_componentBackgroundColor),
             textColor = typedArray.colorOrNull(R.styleable.PayPalSavedPaymentMethodView_componentTextColor),
             baseFontSizeSp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_componentBaseFontSizeSp, scaledDensity),
@@ -415,10 +415,10 @@ private fun styleFromAttrs(
             cornerRadiusDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_containerCornerRadiusDp, density),
             borderColor = typedArray.colorOrNull(R.styleable.PayPalSavedPaymentMethodView_containerBorderColor),
             borderWidthDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_containerBorderWidthDp, density),
-            logo = LogoStyle(
+            logo = PayPalLogoStyle(
                 widthDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_logoWidthDp, density)
             ),
-            label = LabelStyle(
+            label = PayPalLabelStyle(
                 fontSizeSp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_labelFontSizeSp, scaledDensity),
                 marginStartDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_labelMarginStartDp, density)
             ),
@@ -434,13 +434,13 @@ private fun styleFromAttrs(
         )
 
         PayPalSavedPaymentMethodViewStyle(
-            showLogo = typedArray.getBoolean(R.styleable.PayPalSavedPaymentMethodView_showLogo, true),
-            showLabel = typedArray.getBoolean(R.styleable.PayPalSavedPaymentMethodView_showLabel, true),
-            showCreditMessaging = typedArray.getBoolean(
+            showPayPalLogo = typedArray.getBoolean(R.styleable.PayPalSavedPaymentMethodView_showLogo, true),
+            showPayPalLabel = typedArray.getBoolean(R.styleable.PayPalSavedPaymentMethodView_showLabel, true),
+            showPayPalCreditMessaging = typedArray.getBoolean(
                 R.styleable.PayPalSavedPaymentMethodView_showCreditMessaging,
                 true
             ),
-            componentTheme = componentTheme,
+            componentAppearance = componentTheme,
             container = container
         )
     } finally {

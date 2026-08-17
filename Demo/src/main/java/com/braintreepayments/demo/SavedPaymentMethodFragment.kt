@@ -11,9 +11,9 @@ import com.braintreepayments.api.paypal.PayPalPendingRequest
 import com.braintreepayments.api.paypal.PayPalResult
 import com.braintreepayments.api.paypalsavedpaymentmethod.callback.PayPalSavedPaymentMethodLaunchCallback
 import com.braintreepayments.api.paypalsavedpaymentmethod.component.PayPalSavedPaymentMethodView
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ComponentThemeStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ComponentAppearance
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ContainerStyle
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.LogoStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalLogoStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodViewStyle
 
 /**
@@ -47,7 +47,7 @@ class SavedPaymentMethodFragment : BaseFragment() {
 
         kotlinStyleView.setStyle(
             PayPalSavedPaymentMethodViewStyle(
-                componentTheme = ComponentThemeStyle(
+                componentAppearance = ComponentAppearance(
                     backgroundColor = Color.parseColor("#E8F0FE"),
                     textColor = Color.parseColor("#1A3E7A")
                 ),
@@ -57,7 +57,7 @@ class SavedPaymentMethodFragment : BaseFragment() {
                     borderWidthDp = 1f,
                     horizontalPaddingDp = 16f,
                     verticalPaddingDp = 12f,
-                    logo = LogoStyle(widthDp = 56f)
+                    logo = PayPalLogoStyle(widthDp = 56f)
                 )
             )
         )

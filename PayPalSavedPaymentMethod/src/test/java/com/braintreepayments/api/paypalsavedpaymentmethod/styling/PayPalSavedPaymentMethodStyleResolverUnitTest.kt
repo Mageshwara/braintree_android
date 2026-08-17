@@ -45,15 +45,15 @@ class PayPalSavedPaymentMethodStyleResolverUnitTest {
     @Test
     fun `explicit values override SDK defaults`() {
         val style = PayPalSavedPaymentMethodViewStyle(
-            showLogo = false,
-            componentTheme = ComponentThemeStyle(
+            showPayPalLogo = false,
+            componentAppearance = ComponentAppearance(
                 backgroundColor = Color.BLUE,
                 textColor = Color.RED
             ),
             container = ContainerStyle(
                 horizontalPaddingDp = 5f,
-                logo = LogoStyle(widthDp = 32f),
-                label = LabelStyle(fontSizeSp = 18f, marginStartDp = 4f),
+                logo = PayPalLogoStyle(widthDp = 32f),
+                label = PayPalLabelStyle(fontSizeSp = 18f, marginStartDp = 4f),
                 fundingInstrument = FundingInstrumentStyle(textFontSizeSp = 13f),
                 creditMessaging = CreditMessagingStyle(linkColor = Color.GREEN)
             )
@@ -79,10 +79,10 @@ class PayPalSavedPaymentMethodStyleResolverUnitTest {
     @Test
     fun `baseFontSizeSp fills in for font fields left unset, but not non-font fields`() {
         val style = PayPalSavedPaymentMethodViewStyle(
-            componentTheme = ComponentThemeStyle(baseFontSizeSp = 22f),
+            componentAppearance = ComponentAppearance(baseFontSizeSp = 22f),
             container = ContainerStyle(
                 // labelFontSizeSp explicitly set -> wins over baseFontSizeSp
-                label = LabelStyle(fontSizeSp = 15f)
+                label = PayPalLabelStyle(fontSizeSp = 15f)
                 // fundingInstrument + creditMessaging font sizes left unset -> fall back to baseFontSizeSp
             )
         )
@@ -100,7 +100,7 @@ class PayPalSavedPaymentMethodStyleResolverUnitTest {
     @Test
     fun `no baseFontSizeSp and no explicit value falls back to SDK per-element default`() {
         val resolved = PayPalSavedPaymentMethodStyleResolver(
-            PayPalSavedPaymentMethodViewStyle(componentTheme = ComponentThemeStyle())
+            PayPalSavedPaymentMethodViewStyle(componentAppearance = ComponentAppearance())
         )
 
         assertEquals(20f, resolved.labelFontSizeSp)
