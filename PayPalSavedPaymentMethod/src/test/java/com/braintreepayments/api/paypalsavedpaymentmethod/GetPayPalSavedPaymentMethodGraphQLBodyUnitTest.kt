@@ -6,11 +6,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class GetSavedPaypalPaymentMethodGraphQLBodyUnitTest {
+class GetPayPalSavedPaymentMethodGraphQLBodyUnitTest {
 
     @Test
     fun stickyFi_buildsStickyFiInput() {
-        val body = GetSavedPaypalPaymentMethodGraphQLBody.stickyFi("pmid-jwt")
+        val body = GetPayPalSavedPaymentMethodGraphQLBody.stickyFi("pmid-jwt")
         val input = body.getJSONObject(GraphQLConstants.Keys.VARIABLES)
             .getJSONObject(GraphQLConstants.Keys.INPUT)
 
@@ -23,7 +23,7 @@ class GetSavedPaypalPaymentMethodGraphQLBodyUnitTest {
 
     @Test
     fun fromApprovedCheckout_buildsOrderInput() {
-        val body = GetSavedPaypalPaymentMethodGraphQLBody.fromApprovedCheckout("order-123")
+        val body = GetPayPalSavedPaymentMethodGraphQLBody.fromApprovedCheckout("order-123")
         val input = body.getJSONObject(GraphQLConstants.Keys.VARIABLES)
             .getJSONObject(GraphQLConstants.Keys.INPUT)
 

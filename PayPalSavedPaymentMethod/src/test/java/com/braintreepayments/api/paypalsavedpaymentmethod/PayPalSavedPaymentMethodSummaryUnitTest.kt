@@ -11,7 +11,7 @@ import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalBetaApi::class)
 @RunWith(RobolectricTestRunner::class)
-class PayPalPaymentMethodSummaryUnitTest {
+class PayPalSavedPaymentMethodSummaryUnitTest {
 
     @Test
     fun fromJson_parsesInstrumentResponse() {
@@ -23,7 +23,7 @@ class PayPalPaymentMethodSummaryUnitTest {
             """.trimIndent()
         )
 
-        val result = PayPalPaymentMethodSummary.fromJson(json)
+        val result = PayPalSavedPaymentMethodSummary.fromJson(json)
 
         assertNull(result.payer)
         val instrument = result.primaryInstrument!!
@@ -43,7 +43,7 @@ class PayPalPaymentMethodSummaryUnitTest {
             """.trimIndent()
         )
 
-        val result = PayPalPaymentMethodSummary.fromJson(json)
+        val result = PayPalSavedPaymentMethodSummary.fromJson(json)
 
         assertTrue(result.paymentMethods.isEmpty())
         assertNull(result.primaryInstrument)
@@ -55,7 +55,7 @@ class PayPalPaymentMethodSummaryUnitTest {
     fun fromJson_returnsEmptyNoFi_whenDataNull() {
         val json = JSONObject("""{"data":{"paypalFundingInstrumentDetails":null}}""")
 
-        val result = PayPalPaymentMethodSummary.fromJson(json)
+        val result = PayPalSavedPaymentMethodSummary.fromJson(json)
 
         assertTrue(result.paymentMethods.isEmpty())
         assertNull(result.payer)
@@ -72,7 +72,7 @@ class PayPalPaymentMethodSummaryUnitTest {
             """.trimIndent()
         )
 
-        val exception = PayPalPaymentMethodSummaryException.fromGraphQLResponse(json)
+        val exception = PayPalSavedPaymentMethodSummaryException.fromGraphQLResponse(json)
 
         assertEquals("AUTHENTICATION", exception.errorClass)
         assertEquals("PayPal access token not found for merchant account.", exception.message)
@@ -88,7 +88,7 @@ class PayPalPaymentMethodSummaryUnitTest {
             """.trimIndent()
         )
 
-        val exception = PayPalPaymentMethodSummaryException.fromGraphQLResponse(json)
+        val exception = PayPalSavedPaymentMethodSummaryException.fromGraphQLResponse(json)
 
         assertEquals("INTERNAL", exception.errorClass)
     }

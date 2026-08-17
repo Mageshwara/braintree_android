@@ -24,7 +24,7 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.R
  * `com.braintreepayments.api.uicomponents.compose.ShimmerBox` if that implementation changes.
  */
 @Composable
-internal fun SavedPayPalPaymentMethodShimmerBox(
+internal fun PayPalSavedPaymentMethodShimmerBox(
     modifier: Modifier = Modifier,
     shape: Shape = RectangleShape,
     brush: Brush = Brush.horizontalGradient(
@@ -33,9 +33,9 @@ internal fun SavedPayPalPaymentMethodShimmerBox(
             colorResource(R.color.paypal_saved_payment_method_shimmer_end)
         )
     ),
-    minAlpha: Float = SavedPayPalPaymentMethodShimmerBoxDefaults.MinAlpha,
-    maxAlpha: Float = SavedPayPalPaymentMethodShimmerBoxDefaults.MaxAlpha,
-    durationMillis: Int = SavedPayPalPaymentMethodShimmerBoxDefaults.DurationMillis,
+    minAlpha: Float = PayPalSavedPaymentMethodShimmerBoxDefaults.MinAlpha,
+    maxAlpha: Float = PayPalSavedPaymentMethodShimmerBoxDefaults.MaxAlpha,
+    durationMillis: Int = PayPalSavedPaymentMethodShimmerBoxDefaults.DurationMillis,
 ) {
     val transition = rememberInfiniteTransition(label = "shimmer")
     val alpha by transition.animateFloat(
@@ -50,7 +50,7 @@ internal fun SavedPayPalPaymentMethodShimmerBox(
     Spacer(modifier = modifier.alpha(alpha).background(brush = brush, shape = shape))
 }
 
-internal object SavedPayPalPaymentMethodShimmerBoxDefaults {
+internal object PayPalSavedPaymentMethodShimmerBoxDefaults {
     const val MinAlpha = 0.5f
     const val MaxAlpha = 1f
     const val DurationMillis = 800

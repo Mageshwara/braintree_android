@@ -6,7 +6,7 @@ import androidx.annotation.FontRes
 
 /**
  * Style contract for
- * [com.braintreepayments.api.paypalsavedpaymentmethod.compose.SavedPayPalPaymentMethodView] — v1, happy
+ * [com.braintreepayments.api.paypalsavedpaymentmethod.compose.PayPalSavedPaymentMethodView] — v1, happy
  * path.
  *
  * Plain Kotlin data classes only — no UI-toolkit types. Single source of truth across
@@ -16,7 +16,7 @@ import androidx.annotation.FontRes
  * Scope: single-row layout, light theme only. Dark theme, responsive stacked layout, and logo
  * box-scaling are deliberately deferred.
  */
-data class SavedPayPalPaymentMethodViewStyle(
+data class PayPalSavedPaymentMethodViewStyle(
     val showLogo: Boolean = true,
     val showLabel: Boolean = true,
     val showCreditMessaging: Boolean = true,

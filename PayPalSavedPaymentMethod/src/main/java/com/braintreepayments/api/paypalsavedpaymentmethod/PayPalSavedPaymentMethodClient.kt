@@ -19,14 +19,14 @@ import org.json.JSONObject
  * GraphQL calls directly against [BraintreeClient], and starts the edit-FI PayPal payment auth flow
  * via [PayPalClient].
  */
-class PayPalPaymentMethodClient internal constructor(
+class PayPalSavedPaymentMethodClient internal constructor(
     private val braintreeClient: BraintreeClient,
     private val payPalClient: PayPalClient,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
 
     /**
-     * Initializes a new [PayPalPaymentMethodClient] instance
+     * Initializes a new [PayPalSavedPaymentMethodClient] instance
      *
      * @param context          an Android Context
      * @param authorization    a Tokenization Key or Client Token used to authenticate
@@ -77,15 +77,15 @@ class PayPalPaymentMethodClient internal constructor(
      * `suspend` [fetchFI] overload when calling from a coroutine.
      *
      * If [paymentMethodIdJwt] is blank the [callback] receives a
-     * [PayPalPaymentMethodSummaryResult.Failure] with a [PayPalPaymentMethodSummaryException].
+     * [PayPalSavedPaymentMethodSummaryResult.Failure] with a [PayPalSavedPaymentMethodSummaryException].
      *
      * @param paymentMethodIdJwt the `paymentMethodIdJwt` identifying the vaulted funding instrument
-     * @param callback [PayPalPaymentMethodSummaryCallback] invoked with the result
+     * @param callback [PayPalSavedPaymentMethodSummaryCallback] invoked with the result
      */
     @ExperimentalBetaApi
-    fun fetchFI(paymentMethodIdJwt: String, callback: PayPalPaymentMethodSummaryCallback) {
+    fun fetchFI(paymentMethodIdJwt: String, callback: PayPalSavedPaymentMethodSummaryCallback) {
         coroutineScope.launch {
-            callback.onPayPalPaymentMethodSummaryResult(fetchFI(paymentMethodIdJwt))
+            callback.onPayPalSavedPaymentMethodSummaryResult(fetchFI(paymentMethodIdJwt))
         }
     }
 
@@ -93,27 +93,27 @@ class PayPalPaymentMethodClient internal constructor(
      * Fetches the sticky (default) vaulted funding instrument for display.
      *
      * `suspend` variant: call from a coroutine to receive the result directly as the return value.
-     * Use the [fetchFI] overload that takes a [PayPalPaymentMethodSummaryCallback] outside a
+     * Use the [fetchFI] overload that takes a [PayPalSavedPaymentMethodSummaryCallback] outside a
      * coroutine.
      *
-     * If [paymentMethodIdJwt] is blank a [PayPalPaymentMethodSummaryResult.Failure] with a
-     * [PayPalPaymentMethodSummaryException] is returned.
+     * If [paymentMethodIdJwt] is blank a [PayPalSavedPaymentMethodSummaryResult.Failure] with a
+     * [PayPalSavedPaymentMethodSummaryException] is returned.
      *
      * @param paymentMethodIdJwt the `paymentMethodIdJwt` identifying the vaulted funding instrument
-     * @return [PayPalPaymentMethodSummaryResult]
+     * @return [PayPalSavedPaymentMethodSummaryResult]
      */
     @ExperimentalBetaApi
-    suspend fun fetchFI(paymentMethodIdJwt: String): PayPalPaymentMethodSummaryResult {
+    suspend fun fetchFI(paymentMethodIdJwt: String): PayPalSavedPaymentMethodSummaryResult {
         if (paymentMethodIdJwt.isBlank()) {
-            return PayPalPaymentMethodSummaryResult.Failure(
-                PayPalPaymentMethodSummaryException(
+            return PayPalSavedPaymentMethodSummaryResult.Failure(
+                PayPalSavedPaymentMethodSummaryException(
                     errorClass = null,
-                    message = PayPalPaymentMethodSummaryException.MISSING_PAYMENT_METHOD_ID_JWT,
+                    message = PayPalSavedPaymentMethodSummaryException.MISSING_PAYMENT_METHOD_ID_JWT,
                 )
             )
         }
         return getSavedPaypalPaymentMethod(
-            GetSavedPaypalPaymentMethodGraphQLBody.stickyFi(paymentMethodIdJwt)
+            GetPayPalSavedPaymentMethodGraphQLBody.stickyFi(paymentMethodIdJwt)
         )
     }
 
@@ -125,12 +125,12 @@ class PayPalPaymentMethodClient internal constructor(
      * `suspend` [refetchFI] overload when calling from a coroutine.
      *
      * @param orderId  the approved-checkout order id
-     * @param callback [PayPalPaymentMethodSummaryCallback] invoked with the result
+     * @param callback [PayPalSavedPaymentMethodSummaryCallback] invoked with the result
      */
     @ExperimentalBetaApi
-    fun refetchFI(orderId: String, callback: PayPalPaymentMethodSummaryCallback) {
+    fun refetchFI(orderId: String, callback: PayPalSavedPaymentMethodSummaryCallback) {
         coroutineScope.launch {
-            callback.onPayPalPaymentMethodSummaryResult(refetchFI(orderId))
+            callback.onPayPalSavedPaymentMethodSummaryResult(refetchFI(orderId))
         }
     }
 
@@ -139,31 +139,31 @@ class PayPalPaymentMethodClient internal constructor(
      * id.
      *
      * `suspend` variant: call from a coroutine to receive the result directly as the return value.
-     * Use the [refetchFI] overload that takes a [PayPalPaymentMethodSummaryCallback] outside a
+     * Use the [refetchFI] overload that takes a [PayPalSavedPaymentMethodSummaryCallback] outside a
      * coroutine.
      *
      * @param orderId the approved-checkout order id
-     * @return [PayPalPaymentMethodSummaryResult]
+     * @return [PayPalSavedPaymentMethodSummaryResult]
      */
     @ExperimentalBetaApi
-    suspend fun refetchFI(orderId: String): PayPalPaymentMethodSummaryResult =
+    suspend fun refetchFI(orderId: String): PayPalSavedPaymentMethodSummaryResult =
         getSavedPaypalPaymentMethod(
-            GetSavedPaypalPaymentMethodGraphQLBody.fromApprovedCheckout(orderId)
+            GetPayPalSavedPaymentMethodGraphQLBody.fromApprovedCheckout(orderId)
         )
 
     @OptIn(ExperimentalBetaApi::class)
     @Suppress("TooGenericExceptionCaught")
-    private suspend fun getSavedPaypalPaymentMethod(body: JSONObject): PayPalPaymentMethodSummaryResult =
+    private suspend fun getSavedPaypalPaymentMethod(body: JSONObject): PayPalSavedPaymentMethodSummaryResult =
         try {
             val response = JSONObject(braintreeClient.sendGraphQLPOST(body))
             val errors = response.optJSONArray(GraphQLConstants.Keys.ERRORS)
             if (errors != null && errors.length() > 0) {
-                throw PayPalPaymentMethodSummaryException.fromGraphQLResponse(response)
+                throw PayPalSavedPaymentMethodSummaryException.fromGraphQLResponse(response)
             }
-            PayPalPaymentMethodSummaryResult.Success(PayPalPaymentMethodSummary.fromJson(response))
+            PayPalSavedPaymentMethodSummaryResult.Success(PayPalSavedPaymentMethodSummary.fromJson(response))
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            PayPalPaymentMethodSummaryResult.Failure(e)
+            PayPalSavedPaymentMethodSummaryResult.Failure(e)
         }
 
     /**

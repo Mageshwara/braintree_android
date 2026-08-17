@@ -45,7 +45,7 @@ data class Payer internal constructor(
  * @property payer          Present for display-only responses; null when instruments are returned.
  */
 @ExperimentalBetaApi
-data class PayPalPaymentMethodSummary internal constructor(
+data class PayPalSavedPaymentMethodSummary internal constructor(
     val paymentMethods: List<PayPalPaymentMethod>,
     val payer: Payer?,
 ) {
@@ -71,7 +71,7 @@ data class PayPalPaymentMethodSummary internal constructor(
         private const val TYPE_KEY = "type"
         private const val SUBTYPE_KEY = "subtype"
 
-        fun fromJson(response: JSONObject): PayPalPaymentMethodSummary {
+        fun fromJson(response: JSONObject): PayPalSavedPaymentMethodSummary {
             val payload = response
                 .optJSONObject(DATA_KEY)
                 ?.optJSONObject(PAYPAL_FUNDING_INSTRUMENT_DETAILS_KEY)
@@ -100,7 +100,7 @@ data class PayPalPaymentMethodSummary internal constructor(
                 }
             }.orEmpty()
 
-            return PayPalPaymentMethodSummary(paymentMethods = instruments, payer = payer)
+            return PayPalSavedPaymentMethodSummary(paymentMethods = instruments, payer = payer)
         }
     }
 }

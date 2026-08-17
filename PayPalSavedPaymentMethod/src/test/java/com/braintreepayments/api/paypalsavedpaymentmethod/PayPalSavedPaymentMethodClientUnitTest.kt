@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalBetaApi::class)
 @RunWith(RobolectricTestRunner::class)
-class PayPalPaymentMethodClientUnitTest {
+class PayPalSavedPaymentMethodClientUnitTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val payPalClient = mockk<PayPalClient>(relaxed = true)
@@ -40,29 +40,29 @@ class PayPalPaymentMethodClientUnitTest {
         val braintreeClient = MockkBraintreeClientBuilder().build()
         coEvery { braintreeClient.sendGraphQLPOST(capture(bodySlot)) } returns responseJson
 
-        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
 
         val result = sut.fetchFI("pmid-jwt")
 
         val input = bodySlot.captured.getJSONObject("variables").getJSONObject("input")
         assertEquals("STICKY_FI", input.getString("fetchPaymentMethodType"))
         assertEquals("pmid-jwt", input.getString("paymentMethodIdJwt"))
-        assertTrue(result is PayPalPaymentMethodSummaryResult.Success)
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Success)
     }
 
     @Test
     fun fetchFI_whenJwtMissing_returnsFailure() = runTest(testDispatcher) {
         val braintreeClient = MockkBraintreeClientBuilder().build()
 
-        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
 
         val result = sut.fetchFI("")
 
-        assertTrue(result is PayPalPaymentMethodSummaryResult.Failure)
-        val error = (result as PayPalPaymentMethodSummaryResult.Failure).error
-        assertTrue(error is PayPalPaymentMethodSummaryException)
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Failure)
+        val error = (result as PayPalSavedPaymentMethodSummaryResult.Failure).error
+        assertTrue(error is PayPalSavedPaymentMethodSummaryException)
         assertEquals(
-            PayPalPaymentMethodSummaryException.MISSING_PAYMENT_METHOD_ID_JWT,
+            PayPalSavedPaymentMethodSummaryException.MISSING_PAYMENT_METHOD_ID_JWT,
             error.message
         )
     }
@@ -74,14 +74,14 @@ class PayPalPaymentMethodClientUnitTest {
         val braintreeClient = MockkBraintreeClientBuilder().build()
         coEvery { braintreeClient.sendGraphQLPOST(capture(bodySlot)) } returns responseJson
 
-        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
 
         val result = sut.refetchFI("order-123")
 
         val input = bodySlot.captured.getJSONObject("variables").getJSONObject("input")
         assertEquals("FI_FROM_APPROVED_CHECKOUT", input.getString("fetchPaymentMethodType"))
         assertEquals("order-123", input.getString("orderId"))
-        assertTrue(result is PayPalPaymentMethodSummaryResult.Success)
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Success)
     }
 
     @Test
@@ -94,14 +94,14 @@ class PayPalPaymentMethodClientUnitTest {
         val braintreeClient = MockkBraintreeClientBuilder().build()
         coEvery { braintreeClient.sendGraphQLPOST(any()) } returns responseJson
 
-        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
 
         val result = sut.fetchFI("pmid-jwt")
 
-        assertTrue(result is PayPalPaymentMethodSummaryResult.Failure)
-        val error = (result as PayPalPaymentMethodSummaryResult.Failure).error
-        assertTrue(error is PayPalPaymentMethodSummaryException)
-        assertEquals("AUTHENTICATION", (error as PayPalPaymentMethodSummaryException).errorClass)
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Failure)
+        val error = (result as PayPalSavedPaymentMethodSummaryResult.Failure).error
+        assertTrue(error is PayPalSavedPaymentMethodSummaryException)
+        assertEquals("AUTHENTICATION", (error as PayPalSavedPaymentMethodSummaryException).errorClass)
     }
 
     @Test
@@ -109,12 +109,12 @@ class PayPalPaymentMethodClientUnitTest {
         val braintreeClient = MockkBraintreeClientBuilder().build()
         coEvery { braintreeClient.sendGraphQLPOST(any()) } throws IOException("network down")
 
-        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
 
         val result = sut.fetchFI("pmid-jwt")
 
-        assertTrue(result is PayPalPaymentMethodSummaryResult.Failure)
-        assertTrue((result as PayPalPaymentMethodSummaryResult.Failure).error is IOException)
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Failure)
+        assertTrue((result as PayPalSavedPaymentMethodSummaryResult.Failure).error is IOException)
     }
 
     @Test
@@ -136,7 +136,7 @@ class PayPalPaymentMethodClientUnitTest {
                 braintreeClient.sendPOST(url = capture(urlSlot), data = capture(bodySlot))
             } returns responseJson
 
-            val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+            val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
             val request = PayPalCreditMessagingRequest(
                 flowContext = FlowContext(),
                 messagePlacements = listOf(
@@ -170,7 +170,7 @@ class PayPalPaymentMethodClientUnitTest {
                 braintreeClient.sendPOST(url = capture(urlSlot), data = any())
             } returns responseJson
 
-            val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+            val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
             val request = PayPalCreditMessagingRequest(
                 flowContext = FlowContext(),
                 messagePlacements = listOf(
@@ -194,7 +194,7 @@ class PayPalPaymentMethodClientUnitTest {
             .build()
         coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
 
-        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
         val request = PayPalCreditMessagingRequest(
             flowContext = FlowContext(),
             messagePlacements = listOf(
@@ -216,7 +216,7 @@ class PayPalPaymentMethodClientUnitTest {
                 .build()
             coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
 
-            val sut = PayPalPaymentMethodClient(
+            val sut = PayPalSavedPaymentMethodClient(
                 braintreeClient,
                 payPalClient,
                 coroutineScope = CoroutineScope(testDispatcher)
@@ -243,7 +243,7 @@ class PayPalPaymentMethodClientUnitTest {
             .build()
         coEvery { braintreeClient.sendPOST(url = any(), data = any()) } throws IOException("network down")
 
-        val sut = PayPalPaymentMethodClient(braintreeClient, payPalClient)
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
         val request = PayPalCreditMessagingRequest(
             flowContext = FlowContext(),
             messagePlacements = listOf(

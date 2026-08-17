@@ -4,7 +4,7 @@ import com.braintreepayments.api.core.ExperimentalBetaApi
 
 /**
  * Callback for receiving the result of
- * [PayPalPaymentMethodClient.fetchCreditPresentmentMessages].
+ * [PayPalSavedPaymentMethodClient.fetchCreditPresentmentMessages].
  */
 @ExperimentalBetaApi
 fun interface PayPalCreditMessagingCallback {

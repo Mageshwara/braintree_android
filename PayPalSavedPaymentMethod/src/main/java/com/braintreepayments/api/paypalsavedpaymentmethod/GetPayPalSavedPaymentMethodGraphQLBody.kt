@@ -8,7 +8,7 @@ import org.json.JSONObject
  * query, two callers — only the `fetchPaymentMethodType` discriminator and the identity field
  * differ.
  */
-internal object GetSavedPaypalPaymentMethodGraphQLBody {
+internal object GetPayPalSavedPaymentMethodGraphQLBody {
 
     /**
      * Initial / sticky FI fetch, keyed by the `paymentMethodIdJwt` from the client token.

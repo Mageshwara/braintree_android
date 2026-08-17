@@ -13,7 +13,7 @@ import org.json.JSONObject
  * for a client-side error such as a missing `paymentMethodIdJwt`.
  */
 @ExperimentalBetaApi
-class PayPalPaymentMethodSummaryException internal constructor(
+class PayPalSavedPaymentMethodSummaryException internal constructor(
     val errorClass: String?,
     message: String?,
     cause: Throwable? = null,
@@ -30,7 +30,7 @@ class PayPalPaymentMethodSummaryException internal constructor(
          * Builds an exception from a GraphQL response whose `errors[]` array is populated, reading
          * the first error's `message` and `extensions.errorClass`.
          */
-        fun fromGraphQLResponse(response: JSONObject): PayPalPaymentMethodSummaryException {
+        fun fromGraphQLResponse(response: JSONObject): PayPalSavedPaymentMethodSummaryException {
             val firstError = response
                 .optJSONArray(GraphQLConstants.Keys.ERRORS)
                 ?.optJSONObject(0)
@@ -40,7 +40,7 @@ class PayPalPaymentMethodSummaryException internal constructor(
             val message = firstError
                 ?.let { Json.optString(it, GraphQLConstants.Keys.MESSAGE, null) }
                 ?: response.toString()
-            return PayPalPaymentMethodSummaryException(errorClass, message)
+            return PayPalSavedPaymentMethodSummaryException(errorClass, message)
         }
     }
 }
