@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- ShimmerBox gradient endpoints (Figma: "Center 3 Colmn" / Shimmer, node 14538:234367). -->
-    <color name="paypal_saved_payment_method_shimmer_start">#EDF0F2</color>
-    <color name="paypal_saved_payment_method_shimmer_end">#BBBEC0</color>
-</resources>
