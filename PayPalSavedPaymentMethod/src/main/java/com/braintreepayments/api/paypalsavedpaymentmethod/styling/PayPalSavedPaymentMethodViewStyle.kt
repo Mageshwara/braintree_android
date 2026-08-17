@@ -6,24 +6,22 @@ import androidx.annotation.FontRes
 /**
  * Style and visibility configuration for the PayPal Saved Payment Method component.
  *
- * All styling properties default to `null`, meaning the SDK-provided default is used. See the
- * "EditFiComponent(SavedPaymentMethodViewStyle) - Styling" spec (Confluence page 3024081184) for
- * the full styling contract, defaults, and guard semantics.
+ * All styling properties default to `null`, meaning the SDK-provided default is used.
  *
- * @param paypalShowLogo whether the PayPal logo is displayed. Default: true.
- * @param paypalShowLabel whether the "PayPal" text label is displayed. Default: true.
- * @param paypalShowCreditMessaging whether eligible Pay Later / credit messaging is displayed. Default: true.
- * @param paypalComponentTheme shared colors and typography used across the component. Null uses the SDK
+ * @param showPayPalLogo whether the PayPal logo is displayed. Default: true.
+ * @param showPayPalLabel whether the "PayPal" text label is displayed. Default: true.
+ * @param showPayPalCreditMessaging whether eligible Pay Later / credit messaging is displayed. Default: true.
+ * @param componentAppearance shared colors and typography used across the component. Null uses the SDK
  * default theme values.
- * @param paypalContainer dimensions, spacing, shape, border, and internal layout of the component. Null
+ * @param container dimensions, spacing, shape, border, and internal layout of the component. Null
  * uses the SDK default container styling.
  */
-data class PayPalSavedPaymentMethodViewStyle(
-    val paypalShowLogo: Boolean = true,
-    val paypalShowLabel: Boolean = true,
-    val paypalShowCreditMessaging: Boolean = true,
-    val paypalComponentTheme: ComponentThemeStyle? = null,
-    val paypalContainer: ContainerStyle? = null
+class PayPalSavedPaymentMethodViewStyle(
+    val showPayPalLogo: Boolean = true,
+    val showPayPalLabel: Boolean = true,
+    val showPayPalCreditMessaging: Boolean = true,
+    val componentAppearance: ComponentAppearance? = null,
+    val container: ContainerStyle? = null
 )
 
 /**
@@ -38,7 +36,7 @@ data class PayPalSavedPaymentMethodViewStyle(
  * SDK default font size for that element is used.
  * @param fontResId font used for text across the component. Null uses the SDK default font.
  */
-data class ComponentThemeStyle(
+class ComponentAppearance(
     @ColorInt val backgroundColor: Int? = null,
     @ColorInt val textColor: Int? = null,
     val baseFontSizeSp: Float? = null,
@@ -65,15 +63,15 @@ data class ComponentThemeStyle(
  * @param creditMessaging styling of the Pay Later / credit messaging. Null uses the SDK default
  * credit messaging styling.
  */
-data class ContainerStyle(
+class ContainerStyle(
     val heightDp: Float? = null,
     val horizontalPaddingDp: Float? = null,
     val verticalPaddingDp: Float? = null,
     val cornerRadiusDp: Float? = null,
     @ColorInt val borderColor: Int? = null,
     val borderWidthDp: Float? = null,
-    val logo: LogoStyle? = null,
-    val label: LabelStyle? = null,
+    val logo: PayPalLogoStyle? = null,
+    val label: PayPalLabelStyle? = null,
     val fundingInstrument: FundingInstrumentStyle? = null,
     val creditMessaging: CreditMessagingStyle? = null
 )
@@ -83,7 +81,7 @@ data class ContainerStyle(
  *
  * @param widthDp width of the PayPal logo, in dp. Null uses the SDK default.
  */
-data class LogoStyle(
+class PayPalLogoStyle(
     val widthDp: Float? = null
 )
 
@@ -91,11 +89,11 @@ data class LogoStyle(
  * Typography and positioning of the "PayPal" text label.
  *
  * @param fontSizeSp font size of the "PayPal" label, in sp. Null uses
- * [ComponentThemeStyle.baseFontSizeSp].
+ * [ComponentAppearance.baseFontSizeSp].
  * @param marginStartDp start margin of the label relative to the preceding PayPal logo, in dp.
  * Null uses the SDK default.
  */
-data class LabelStyle(
+class PayPalLabelStyle(
     val fontSizeSp: Float? = null,
     val marginStartDp: Float? = null
 )
@@ -104,13 +102,13 @@ data class LabelStyle(
  * Styling and positioning of the saved payment method and its edit affordance.
  *
  * @param textFontSizeSp font size of the saved payment method text, in sp. Null uses
- * [ComponentThemeStyle.baseFontSizeSp].
+ * [ComponentAppearance.baseFontSizeSp].
  * @param editIconSizeDp size of the edit icon for the saved payment method, in dp. Null uses the
  * SDK default.
  * @param marginStartDp start margin of the funding instrument relative to the preceding "PayPal"
  * label, in dp. Null uses the SDK default.
  */
-data class FundingInstrumentStyle(
+class FundingInstrumentStyle(
     val textFontSizeSp: Float? = null,
     val editIconSizeDp: Float? = null,
     val marginStartDp: Float? = null
@@ -120,11 +118,11 @@ data class FundingInstrumentStyle(
  * Styling of the Pay Later / credit messaging.
  *
  * @param fontSizeSp font size of the credit messaging text, in sp. Null uses
- * [ComponentThemeStyle.baseFontSizeSp].
+ * [ComponentAppearance.baseFontSizeSp].
  * @param linkColor color of the "Learn more" link within credit messaging. Null uses the SDK
  * default.
  */
-data class CreditMessagingStyle(
+class CreditMessagingStyle(
     val fontSizeSp: Float? = null,
     @ColorInt val linkColor: Int? = null
 )
