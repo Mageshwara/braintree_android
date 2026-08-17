@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- "PayPal" label line height (Figma: Marks Message V2 text box). -->
+    <dimen name="paypal_saved_payment_method_label_line_height">24sp</dimen>
+
+    <!-- FI cluster loading shimmer bar (Figma: "Center 3 Colmn" / Shimmer, node 14538:234367). -->
+    <dimen name="paypal_saved_payment_method_placeholder_width">72dp</dimen>
+    <dimen name="paypal_saved_payment_method_placeholder_height">16dp</dimen>
+    <dimen name="paypal_saved_payment_method_placeholder_corner_radius">4dp</dimen>
+
+    <!-- Gap between the FI cluster row and the credit-messaging row below it (Figma: "Frame
+         2147258134", node 14538:234453 — label row height 30dp, messaging text starts at y=36). -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_spacing">6dp</dimen>
+
+    <!-- Small trailing gap after the credit-messaging text/link so it doesn't sit flush against
+         the container edge. -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_end_padding">4dp</dimen>
+
+    <!-- Credit-messaging loading shimmer bar, shown while the Presentment API fetch is in
+         flight. -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_placeholder_width">220dp</dimen>
+    <dimen name="paypal_saved_payment_method_credit_messaging_placeholder_height">16dp</dimen>
+    <dimen name="paypal_saved_payment_method_credit_messaging_placeholder_corner_radius">4dp</dimen>
+
+    <!-- Credit-messaging wrapped-line spacing (Figma: "Or 4 interest-free payments..." text,
+         node 14538:234473 — 16sp text set on a 24sp line height). -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_line_height">24sp</dimen>
+</resources>
