@@ -25,4 +25,16 @@
     <!-- Credit-messaging wrapped-line spacing (Figma: "Or 4 interest-free payments..." text,
          node 14538:234473 — 16sp text set on a 24sp line height). -->
     <dimen name="paypal_saved_payment_method_credit_messaging_line_height">24sp</dimen>
+
+    <!-- Funding-instrument type icon (Figma: "Funding Icon", 27.87x20.72, height follows source
+         aspect ratio) and its trailing gap. Not merchant-configurable — FundingInstrumentStyle
+         has no icon-width/spacing fields. -->
+    <dimen name="paypal_saved_payment_method_funding_instrument_icon_width">28dp</dimen>
+    <dimen name="paypal_saved_payment_method_funding_instrument_icon_margin">8dp</dimen>
+
+    <!-- Funding-instrument chip shape/padding (Figma: Edit FI Chip). Not merchant-configurable —
+         FundingInstrumentStyle has no chip shape/padding fields. -->
+    <dimen name="paypal_saved_payment_method_funding_instrument_chip_corner_radius">6dp</dimen>
+    <dimen name="paypal_saved_payment_method_funding_instrument_chip_horizontal_padding">8dp</dimen>
+    <dimen name="paypal_saved_payment_method_funding_instrument_chip_vertical_padding">4dp</dimen>
 </resources>

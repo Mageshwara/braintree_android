@@ -1,109 +1,128 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod.styling
 
-import android.graphics.Color
 import androidx.annotation.ColorInt
 import androidx.annotation.FontRes
 
 /**
- * Style contract for
- * [com.braintreepayments.api.paypalsavedpaymentmethod.compose.PayPalSavedPaymentMethodView] — v1, happy
- * path.
+ * Style and visibility configuration for the PayPal Saved Payment Method component.
  *
- * Plain Kotlin data classes only — no UI-toolkit types. Single source of truth across
- * implementations; unit conversion happens only inside each renderer's own drawing code, never
- * here.
+ * All styling properties default to `null`, meaning the SDK-provided default is used.
  *
- * Scope: single-row layout, light theme only. Dark theme, responsive stacked layout, and logo
- * box-scaling are deliberately deferred.
+ * @param showPayPalLogo whether the PayPal logo is displayed. Default: true.
+ * @param showPayPalLabel whether the "PayPal" text label is displayed. Default: true.
+ * @param showPayPalCreditMessaging whether eligible Pay Later / credit messaging is displayed. Default: true.
+ * @param componentAppearance shared colors and typography used across the component. Null uses the SDK
+ * default theme values.
+ * @param container dimensions, spacing, shape, border, and internal layout of the component. Null
+ * uses the SDK default container styling.
  */
-data class PayPalSavedPaymentMethodViewStyle(
-    val showLogo: Boolean = true,
-    val showLabel: Boolean = true,
-    val showCreditMessaging: Boolean = true,
-    @ColorInt val cardColor: Int = Color.WHITE,
-    val theme: ThemeStyle = ThemeStyle(),
-    val container: ContainerStyle = ContainerStyle()
+class PayPalSavedPaymentMethodViewStyle(
+    val showPayPalLogo: Boolean = true,
+    val showPayPalLabel: Boolean = true,
+    val showPayPalCreditMessaging: Boolean = true,
+    val componentAppearance: ComponentAppearance? = null,
+    val container: ContainerStyle? = null
 )
 
 /**
- * Colors, fonts, and brand identity.
+ * Shared colors and typography used across the PayPal Saved Payment Method component.
  *
- * @param linkColor when null, credit-messaging links fall back to bold+underline in
- * [textColorBase].
+ * @param backgroundColor background color of the entire component, including its internal padding
+ * area. Null uses the SDK default.
+ * @param textColor text color used for the PayPal label, funding instrument text, and credit
+ * messaging. Null uses the SDK default.
+ * @param baseFontSizeSp base font size used as a fallback for text elements in the component. If
+ * an element-specific font size is not provided, this value is used. If this is also null, the
+ * SDK default font size for that element is used.
+ * @param fontResId font used for text across the component. Null uses the SDK default font.
  */
-data class ThemeStyle(
-    @ColorInt val textColorBase: Int = Color.parseColor("#222222"),
-    val baseFontSizeSp: Float = 14f,
-    @FontRes val fontResId: Int? = null,
-    @ColorInt val linkColor: Int? = null
+class ComponentAppearance(
+    @ColorInt val backgroundColor: Int? = null,
+    @ColorInt val textColor: Int? = null,
+    val baseFontSizeSp: Float? = null,
+    @FontRes val fontResId: Int? = null
 )
 
 /**
- * The outer box (own shape) plus its four children's styles.
+ * Dimensions, spacing, shape, border, and internal layout of the Saved Payment Method component.
  *
- * @param heightDp when null, the container wraps content; never clamped.
+ * @param heightDp height of the container, in dp. Null defaults to wrap-content.
+ * @param horizontalPaddingDp horizontal padding between the container edges and its content. Null
+ * uses the SDK default.
+ * @param verticalPaddingDp vertical padding between the container edges and its content. Null
+ * uses the SDK default.
+ * @param cornerRadiusDp corner radius of the container, in dp. Null uses the SDK default.
+ * @param borderColor color of the border around the container. Null uses the SDK default.
+ * @param borderWidthDp width of the border around the container, in dp. Null uses the SDK
+ * default.
+ * @param logo sizing of the PayPal logo. Null uses the SDK default logo styling.
+ * @param label typography and positioning of the "PayPal" text label. Null uses the SDK default
+ * label styling.
+ * @param fundingInstrument styling and positioning of the saved payment method and its edit
+ * affordance. Null uses the SDK default funding instrument styling.
+ * @param creditMessaging styling of the Pay Later / credit messaging. Null uses the SDK default
+ * credit messaging styling.
  */
-@Suppress("MagicNumber")
-data class ContainerStyle(
+class ContainerStyle(
     val heightDp: Float? = null,
-    val horizontalPaddingDp: Float = 0f,
-    val verticalPaddingDp: Float = 10f,
-    val cornerRadiusDp: Float = 0f,
-    @ColorInt val borderColor: Int = Color.TRANSPARENT,
-    val borderWidthDp: Float = 0f,
-
-    val logo: LogoStyle = LogoStyle(),
-    val label: LabelStyle = LabelStyle(),
-    val fiCluster: FiClusterStyle = FiClusterStyle(),
-    val creditMessaging: CreditMessagingStyle = CreditMessagingStyle()
+    val horizontalPaddingDp: Float? = null,
+    val verticalPaddingDp: Float? = null,
+    val cornerRadiusDp: Float? = null,
+    @ColorInt val borderColor: Int? = null,
+    val borderWidthDp: Float? = null,
+    val logo: PayPalLogoStyle? = null,
+    val label: PayPalLabelStyle? = null,
+    val fundingInstrument: FundingInstrumentStyle? = null,
+    val creditMessaging: CreditMessagingStyle? = null
 )
 
 /**
- * @param widthDp Figma: "Payment Card Thumbnail", 48x30 (height follows source aspect ratio). Logo
- * is the first child, so its start offset comes from [ContainerStyle.horizontalPaddingDp], not its
- * own margin.
+ * Sizing of the PayPal logo.
+ *
+ * @param widthDp width of the PayPal logo, in dp. Null uses the SDK default.
  */
-@Suppress("MagicNumber")
-data class LogoStyle(
-    val widthDp: Float = 48f
+class PayPalLogoStyle(
+    val widthDp: Float? = null
 )
 
 /**
- * @param fontSizeSp Figma-sourced default (intentionally differs from web's 14px).
- * @param marginStartDp gap from Logo (Figma: "Pay with" / Marks Message V2, 12.727px).
+ * Typography and positioning of the "PayPal" text label.
+ *
+ * @param fontSizeSp font size of the "PayPal" label, in sp. Null uses
+ * [ComponentAppearance.baseFontSizeSp].
+ * @param marginStartDp start margin of the label relative to the preceding PayPal logo, in dp.
+ * Null uses the SDK default.
  */
-@Suppress("MagicNumber")
-data class LabelStyle(
-    val fontSizeSp: Float = 20f,
-    val marginStartDp: Float = 13f
+class PayPalLabelStyle(
+    val fontSizeSp: Float? = null,
+    val marginStartDp: Float? = null
 )
 
 /**
- * @param iconWidthDp Figma: "Funding Icon", 27.87x20.72 (height follows source aspect ratio).
- * @param marginStartDp gap from Label; collapses toward Logo if Label is hidden.
- * @param backgroundColor Figma: Edit FI Chip background.
- * @param cornerRadiusDp Figma: Edit FI Chip corner radius.
- * @param horizontalPaddingDp Figma: Edit FI Chip / FI w edit, left+right padding.
- * @param verticalPaddingDp Figma: Edit FI Chip / FI w edit, top+bottom padding.
+ * Styling and positioning of the saved payment method and its edit affordance.
+ *
+ * @param textFontSizeSp font size of the saved payment method text, in sp. Null uses
+ * [ComponentAppearance.baseFontSizeSp].
+ * @param editIconSizeDp size of the edit icon for the saved payment method, in dp. Null uses the
+ * SDK default.
+ * @param marginStartDp start margin of the funding instrument relative to the preceding "PayPal"
+ * label, in dp. Null uses the SDK default.
  */
-@Suppress("MagicNumber")
-data class FiClusterStyle(
-    val textFontSizeSp: Float = 14f,
-    val editIconSizeDp: Float = 16f,
-    val iconWidthDp: Float = 28f,
-    val marginStartDp: Float = 8f,
-    @ColorInt val backgroundColor: Int = Color.parseColor("#F0F2F9"),
-    val cornerRadiusDp: Float = 6f,
-    val horizontalPaddingDp: Float = 8f,
-    val verticalPaddingDp: Float = 4f
+class FundingInstrumentStyle(
+    val textFontSizeSp: Float? = null,
+    val editIconSizeDp: Float? = null,
+    val marginStartDp: Float? = null
 )
 
 /**
- * `messageText` / `learnMoreText` / `learnMoreUrl` are deliberately absent — that's
- * compliance content from the API (see `CreditMessagingState`), never merchant-authored via
- * style.
+ * Styling of the Pay Later / credit messaging.
+ *
+ * @param fontSizeSp font size of the credit messaging text, in sp. Null uses
+ * [ComponentAppearance.baseFontSizeSp].
+ * @param linkColor color of the "Learn more" link within credit messaging. Null uses the SDK
+ * default.
  */
-@Suppress("MagicNumber")
-data class CreditMessagingStyle(
-    val fontSizeSp: Float = 16f
+class CreditMessagingStyle(
+    val fontSizeSp: Float? = null,
+    @ColorInt val linkColor: Int? = null
 )
