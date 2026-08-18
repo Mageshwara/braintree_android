@@ -388,10 +388,7 @@ private fun fiClusterText(content: PayPalSavedPaymentMethodDisplayState.Content)
     val masked = content.paymentMethod.lastDigits?.let {
         stringResource(R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number, it)
     }
-    return when {
-        masked != null -> "${content.paymentMethod.label} $masked"
-        else -> content.paymentMethod.label
-    }
+    return masked ?: content.paymentMethod.label
 }
 
 @Composable
