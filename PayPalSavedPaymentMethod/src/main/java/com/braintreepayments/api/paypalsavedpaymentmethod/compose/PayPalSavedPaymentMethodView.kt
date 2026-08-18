@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,6 +50,8 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMeth
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.model.PayPalSavedPaymentMethodDisplayState
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodViewStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ResolvedPayPalSavedPaymentMethodViewStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.resolve
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.wrapContentHeight
 
@@ -90,11 +93,11 @@ fun PayPalSavedPaymentMethodView(
 
 private fun shouldShowCreditMessaging(
     hideFiRow: Boolean,
-    style: PayPalSavedPaymentMethodViewStyle,
+    showPayPalCreditMessaging: Boolean,
     isCreditMessageLoading: Boolean,
     creditMessage: String?,
     creditMessageLinkLabel: String?
-): Boolean = !hideFiRow && style.showCreditMessaging &&
+): Boolean = !hideFiRow && showPayPalCreditMessaging &&
     (isCreditMessageLoading || (creditMessage != null && creditMessageLinkLabel != null))
 
 /**
@@ -109,7 +112,7 @@ private fun shouldShowCreditMessaging(
  * @param isCreditMessageLoading true while the credit-messaging fetch is in flight; renders a
  * shimmer placeholder in place of the row.
  * @param creditMessage the compliance-provided messaging copy (e.g. "As low as $10/mo"); the
- * credit-messaging row is hidden when this is null or [PayPalSavedPaymentMethodViewStyle.showCreditMessaging]
+ * credit-messaging row is hidden when this is null or [PayPalSavedPaymentMethodViewStyle.showPayPalCreditMessaging]
  * is false.
  * @param creditMessageLinkLabel the trailing link text (e.g. "Learn more").
  * @param onCreditMessageLinkClick invoked when the credit-messaging link is tapped.
@@ -130,11 +133,11 @@ fun PayPalSavedPaymentMethodViewContent(
     // NoNetwork and Error both hide the FI row but keep the PayPal brand mark visible.
     val hideFiRow = displayState is PayPalSavedPaymentMethodDisplayState.Error ||
         displayState is PayPalSavedPaymentMethodDisplayState.NoNetwork
-    val container = style.container
-    val textColor = Color(style.theme.textColorBase)
+    val resolved = style.resolve()
+    val textColor = Color(resolved.textColor)
     val showCreditMessaging = shouldShowCreditMessaging(
         hideFiRow = hideFiRow,
-        style = style,
+        showPayPalCreditMessaging = resolved.showPayPalCreditMessaging,
         isCreditMessageLoading = isCreditMessageLoading,
         creditMessage = creditMessage,
         creditMessageLinkLabel = creditMessageLinkLabel
@@ -142,50 +145,50 @@ fun PayPalSavedPaymentMethodViewContent(
 
     Card(
         modifier = modifier
-            .let { if (container.heightDp != null) it.height(container.heightDp.dp) else it.wrapContentHeight() },
-        shape = RoundedCornerShape(container.cornerRadiusDp.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(style.cardColor)),
+            .let { if (resolved.heightDp != null) it.height(resolved.heightDp.dp) else it.wrapContentHeight() },
+        shape = RoundedCornerShape(resolved.cornerRadiusDp.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(resolved.backgroundColor)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = if (container.borderWidthDp > 0f) {
-            BorderStroke(container.borderWidthDp.dp, Color(container.borderColor))
+        border = if (resolved.borderWidthDp > 0f) {
+            BorderStroke(resolved.borderWidthDp.dp, Color(resolved.borderColor))
         } else {
             null
         }
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = container.horizontalPaddingDp.dp, vertical = container.verticalPaddingDp.dp),
+                .padding(horizontal = resolved.horizontalPaddingDp.dp, vertical = resolved.verticalPaddingDp.dp),
             verticalAlignment = Alignment.Top
         ) {
-            if (style.showLogo) {
+            if (resolved.showPayPalLogo) {
                 Image(
                     painter = painterResource(R.drawable.ic_paypal_brand_logo),
                     contentDescription = stringResource(R.string.paypal_saved_payment_method_label),
-                    modifier = Modifier.width(container.logo.widthDp.dp)
+                    modifier = Modifier.width(resolved.logoWidthDp.dp)
                 )
             }
 
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (style.showLabel) {
+                    if (resolved.showPayPalLabel) {
                         Text(
                             text = stringResource(R.string.paypal_saved_payment_method_label),
                             color = textColor,
-                            fontSize = container.label.fontSizeSp.sp,
+                            fontSize = resolved.labelFontSizeSp.sp,
                             lineHeight = spDimensionResource(R.dimen.paypal_saved_payment_method_label_line_height),
                             fontWeight = FontWeight.Medium,
-                            fontFamily = style.theme.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default,
-                            modifier = Modifier.padding(start = container.label.marginStartDp.dp)
+                            fontFamily = resolved.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default,
+                            modifier = Modifier.padding(start = resolved.labelMarginStartDp.dp)
                         )
                     }
 
                     if (!hideFiRow) {
                         FiCluster(
                             displayState = displayState,
-                            style = style,
+                            resolved = resolved,
                             editContentDescription = editContentDescription,
                             onEditClick = onEditClick,
-                            modifier = Modifier.padding(start = container.fiCluster.marginStartDp.dp)
+                            modifier = Modifier.padding(start = resolved.fundingInstrumentMarginStartDp.dp)
                         )
                     }
                 }
@@ -195,11 +198,11 @@ fun PayPalSavedPaymentMethodViewContent(
                         isLoading = isCreditMessageLoading,
                         message = creditMessage,
                         linkLabel = creditMessageLinkLabel,
-                        style = style,
+                        resolved = resolved,
                         onLinkClick = onCreditMessageLinkClick,
                         modifier = Modifier
                             .padding(
-                                start = container.label.marginStartDp.dp,
+                                start = resolved.labelMarginStartDp.dp,
                                 top = dimensionResource(
                                     R.dimen.paypal_saved_payment_method_credit_messaging_spacing
                                 ),
@@ -219,7 +222,7 @@ private fun CreditMessagingSection(
     isLoading: Boolean,
     message: String?,
     linkLabel: String?,
-    style: PayPalSavedPaymentMethodViewStyle,
+    resolved: ResolvedPayPalSavedPaymentMethodViewStyle,
     onLinkClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -229,7 +232,7 @@ private fun CreditMessagingSection(
         CreditMessagingRow(
             message = message.orEmpty(),
             linkLabel = linkLabel.orEmpty(),
-            style = style,
+            resolved = resolved,
             onLinkClick = onLinkClick,
             modifier = modifier
         )
@@ -240,12 +243,12 @@ private fun CreditMessagingSection(
 private fun CreditMessagingRow(
     message: String,
     linkLabel: String,
-    style: PayPalSavedPaymentMethodViewStyle,
+    resolved: ResolvedPayPalSavedPaymentMethodViewStyle,
     onLinkClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val baseColor = Color(style.theme.textColorBase)
-    val linkColor = style.theme.linkColor?.let { Color(it) } ?: baseColor
+    val baseColor = Color(resolved.textColor)
+    val linkColor = resolved.creditMessagingLinkColor?.let { Color(it) } ?: baseColor
 
     Text(
         text = buildAnnotatedString {
@@ -261,7 +264,7 @@ private fun CreditMessagingRow(
                 append(linkLabel)
             }
         },
-        fontSize = style.container.creditMessaging.fontSizeSp.sp,
+        fontSize = resolved.creditMessagingFontSizeSp.sp,
         lineHeight = spDimensionResource(R.dimen.paypal_saved_payment_method_credit_messaging_line_height),
         modifier = modifier.clickable(onClick = onLinkClick)
     )
@@ -271,14 +274,16 @@ private fun CreditMessagingRow(
 @Composable
 private fun FiCluster(
     displayState: PayPalSavedPaymentMethodDisplayState,
-    style: PayPalSavedPaymentMethodViewStyle,
+    resolved: ResolvedPayPalSavedPaymentMethodViewStyle,
     editContentDescription: String?,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val fiClusterStyle = style.container.fiCluster
-    val textColor = Color(style.theme.textColorBase)
+    val textColor = Color(resolved.textColor)
     val isLoading = displayState is PayPalSavedPaymentMethodDisplayState.Loading
+    val iconMargin = dimensionResource(R.dimen.paypal_saved_payment_method_funding_instrument_icon_margin)
+    val chipBackground = colorResource(R.color.paypal_saved_payment_method_funding_instrument_chip_background)
+    val chipCornerRadius = dimensionResource(R.dimen.paypal_saved_payment_method_funding_instrument_chip_corner_radius)
 
     Row(
         modifier = modifier
@@ -286,14 +291,16 @@ private fun FiCluster(
                 if (isLoading) {
                     it
                 } else {
-                    it
-                        .clip(RoundedCornerShape(fiClusterStyle.cornerRadiusDp.dp))
-                        .background(Color(fiClusterStyle.backgroundColor))
+                    it.clip(RoundedCornerShape(chipCornerRadius)).background(chipBackground)
                 }
             }
             .padding(
-                horizontal = fiClusterStyle.horizontalPaddingDp.dp,
-                vertical = fiClusterStyle.verticalPaddingDp.dp
+                horizontal = dimensionResource(
+                    R.dimen.paypal_saved_payment_method_funding_instrument_chip_horizontal_padding
+                ),
+                vertical = dimensionResource(
+                    R.dimen.paypal_saved_payment_method_funding_instrument_chip_vertical_padding
+                )
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -307,14 +314,14 @@ private fun FiCluster(
                         painter = painterResource(iconRes),
                         contentDescription = null,
                         modifier = Modifier
-                            .width(fiClusterStyle.iconWidthDp.dp)
-                            .padding(end = fiClusterStyle.horizontalPaddingDp.dp)
+                            .width(dimensionResource(R.dimen.paypal_saved_payment_method_funding_instrument_icon_width))
+                            .padding(end = iconMargin)
                     )
                 }
                 Text(
                     text = fiClusterText(displayState),
                     color = textColor,
-                    fontSize = fiClusterStyle.textFontSizeSp.sp,
+                    fontSize = resolved.fundingInstrumentTextFontSizeSp.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -323,7 +330,7 @@ private fun FiCluster(
                 Text(
                     text = displayState.buyerEmail,
                     color = textColor,
-                    fontSize = fiClusterStyle.textFontSizeSp.sp,
+                    fontSize = resolved.fundingInstrumentTextFontSizeSp.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -337,8 +344,8 @@ private fun FiCluster(
                 painter = painterResource(R.drawable.ic_edit_pencil),
                 contentDescription = editContentDescription,
                 modifier = Modifier
-                    .padding(start = fiClusterStyle.horizontalPaddingDp.dp)
-                    .size(fiClusterStyle.editIconSizeDp.dp)
+                    .padding(start = iconMargin)
+                    .size(resolved.fundingInstrumentEditIconSizeDp.dp)
                     .clickable(onClick = onEditClick)
             )
         }

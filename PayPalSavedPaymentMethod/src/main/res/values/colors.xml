@@ -3,4 +3,8 @@
     <!-- ShimmerBox gradient endpoints (Figma: "Center 3 Colmn" / Shimmer, node 14538:234367). -->
     <color name="paypal_saved_payment_method_shimmer_start">#EDF0F2</color>
     <color name="paypal_saved_payment_method_shimmer_end">#BBBEC0</color>
+
+    <!-- Funding-instrument chip background (Figma: Edit FI Chip). Not merchant-configurable —
+         FundingInstrumentStyle has no background-color field. -->
+    <color name="paypal_saved_payment_method_funding_instrument_chip_background">#F0F2F9</color>
 </resources>
