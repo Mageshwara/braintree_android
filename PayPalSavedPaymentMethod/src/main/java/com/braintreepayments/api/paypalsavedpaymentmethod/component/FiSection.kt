@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
+import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodStyleResolver
@@ -143,6 +144,7 @@ internal class FiSection @JvmOverloads constructor(
         startShimmer()
     }
 
+    @OptIn(ExperimentalBetaApi::class)
     private fun renderAvailable(state: FiClusterState.Available) {
         isVisible = true
         stopShimmer()

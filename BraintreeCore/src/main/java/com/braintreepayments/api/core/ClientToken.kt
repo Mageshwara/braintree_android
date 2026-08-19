@@ -25,6 +25,7 @@ class ClientToken @Throws(InvalidArgumentException::class) internal constructor(
 
     internal val authorizationFingerprint: String
     internal val customerId: String?
+    var edit_billing_agreement_jwt:String? = null
 
     init {
         try {
@@ -32,6 +33,7 @@ class ClientToken @Throws(InvalidArgumentException::class) internal constructor(
             val jsonObject = JSONObject(clientTokenStringDecoded)
             configUrl = jsonObject.getString(CONFIG_URL_KEY)
             authorizationFingerprint = jsonObject.getString(AUTHORIZATION_FINGERPRINT_KEY)
+            edit_billing_agreement_jwt = jsonObject.getString("paymentMethodIdJwt")
             bearer = authorizationFingerprint
             customerId = parseCustomerId(authorizationFingerprint)
             paymentMethodIdJwt = jsonObject.takeIf { it.has(PAYMENT_METHOD_ID_JWT_KEY) }

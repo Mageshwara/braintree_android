@@ -1,5 +1,9 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod.state
 
+import com.braintreepayments.api.core.ExperimentalBetaApi
+import com.braintreepayments.api.paypalsavedpaymentmethod.MessageItem
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingResult
+
 /**
  * The credit messaging row's own internal state, mutated by `PayPalSavedPaymentMethodView` in
  * response to its own credit-messaging fetch. This fetch is independent of the FI fetch backing
@@ -23,4 +27,19 @@ sealed class CreditMessagingState {
      * row is disabled via style. All three collapse to the same visual (no row rendered).
      */
     data object Hidden : CreditMessagingState()
+}
+
+/** Maps the raw fetch result into the credit-messaging row's render state. Shared by XML View and Compose. */
+@OptIn(ExperimentalBetaApi::class)
+internal fun PayPalCreditMessagingResult?.toCreditMessagingState(): CreditMessagingState {
+    val result = this ?: return CreditMessagingState.Hidden
+    val message = result.messageItems.filterIsInstance<MessageItem.Text>().joinToString(" ") { it.text }
+    if (message.isBlank()) return CreditMessagingState.Hidden
+    return CreditMessagingState.Content(
+        CreditMessagingContent(
+            message = message,
+            learnMoreText = result.learnMoreText.orEmpty(),
+            learnMoreUrl = result.learnMoreUrl.orEmpty()
+        )
+    )
 }

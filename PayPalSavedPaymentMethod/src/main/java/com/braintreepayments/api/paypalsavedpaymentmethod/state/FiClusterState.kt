@@ -1,6 +1,8 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod.state
 
+import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummaryResult
 
 /**
  * The FI section's own internal state, mutated by `PayPalSavedPaymentMethodView` in response to
@@ -9,7 +11,7 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMeth
  * [Loading] is a transient state shown while the fetch is in flight; it is distinct from the
  * content states below, which describe how the fetch's *result* renders.
  */
-sealed class FiClusterState {
+internal sealed class FiClusterState {
 
     /** The initial/in-flight state, shown until the FI fetch resolves. */
     data object Loading : FiClusterState()
@@ -25,7 +27,7 @@ sealed class FiClusterState {
      *
      * @property paymentMethod the funding instrument to render
      */
-    data class Available(
+    data class Available @OptIn(ExperimentalBetaApi::class) constructor(
         val paymentMethod: PayPalSavedpaymentMethod
     ) : FiClusterState()
 
@@ -41,5 +43,19 @@ sealed class FiClusterState {
      * The FI fetch failed outright (e.g. no network). The entire FI section is hidden; only the
      * brand mark (logo/label) stays visible.
      */
-    data object NoNetworkLoad : FiClusterState()
+    object NoNetworkLoad : FiClusterState()
+}
+
+/** Maps the raw fetch result into the FI section's render state. Shared by XML View and Compose. */
+@OptIn(ExperimentalBetaApi::class)
+internal fun PayPalSavedPaymentMethodSummaryResult.toFiClusterState(): FiClusterState {
+    val summary = (this as? PayPalSavedPaymentMethodSummaryResult.Success)?.paymentMethodSummary
+        ?: return FiClusterState.NoNetworkLoad
+    val method = summary.paypalSavedPaymentMethods.firstOrNull()
+    val payer = summary.paypalPayer
+    return when {
+        method != null -> FiClusterState.Available(method)
+        payer != null -> FiClusterState.NoFiLoad(payer.email)
+        else -> FiClusterState.NoNetworkLoad
+    }
 }

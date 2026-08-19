@@ -53,5 +53,29 @@
             android:layout_marginTop="24dp"
             android:text="@string/saved_payment_method_refresh_button" />
 
+        <!-- ===== Edit-flow result: last nonce received, for manual testing ===== -->
+        <LinearLayout
+            android:id="@+id/saved_payment_method_nonce_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/saved_payment_method_nonce_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textIsSelectable="true" />
+
+            <Button
+                android:id="@+id/saved_payment_method_nonce_clear_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Clear" />
+
+        </LinearLayout>
+
     </LinearLayout>
 </ScrollView>

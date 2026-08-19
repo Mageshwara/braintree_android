@@ -4,8 +4,14 @@ import android.app.Dialog
 import android.content.Context
 import android.view.Gravity
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.ImageView
+import android.widget.LinearLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 
 /**
@@ -24,12 +30,25 @@ internal class CreditMessagingLander(context: Context) :
     init {
         setContentView(R.layout.credit_messaging_lander)
         webView = findViewById(R.id.psp_lander_webview)
-        findViewById<ImageView>(R.id.psp_lander_close).setOnClickListener { dismiss() }
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                view.loadUrl(request.url.toString())
+                return true
+            }
+        }
+        findViewById<ImageView>(R.id.psp_lander_close).also { closeButton ->
+            closeButton.setOnClickListener { dismiss() }
+            ViewCompat.setOnApplyWindowInsetsListener(closeButton) { view, insets ->
+                val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+                view.updateLayoutParams<LinearLayout.LayoutParams> { topMargin = statusBarInset }
+                insets
+            }
+        }
         setCanceledOnTouchOutside(true)
 
         window?.apply {
             setGravity(Gravity.BOTTOM)
-            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         }
     }
 
@@ -38,5 +57,13 @@ internal class CreditMessagingLander(context: Context) :
         webView.settings.javaScriptEnabled = true
         webView.loadUrl(url)
         show()
+    }
+
+    override fun onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
+        }
     }
 }

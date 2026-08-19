@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.res.TypedArray
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.util.AttributeSet
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -18,18 +20,30 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResultCaller
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
+import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypal.PayPalCheckoutRequest
+import com.braintreepayments.api.paypal.PayPalLauncher
+import com.braintreepayments.api.paypal.PayPalPaymentAuthRequest
+import com.braintreepayments.api.paypal.PayPalPaymentAuthResult
 import com.braintreepayments.api.paypal.PayPalPendingRequest
 import com.braintreepayments.api.paypal.PayPalResult
+import com.braintreepayments.api.paypalsavedpaymentmethod.Amount
+import com.braintreepayments.api.paypalsavedpaymentmethod.FlowContext
+import com.braintreepayments.api.paypalsavedpaymentmethod.MessagePlacement
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingRequest
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodClient
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummary
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.callback.PayPalSavedPaymentMethodLaunchCallback
-import com.braintreepayments.api.paypalsavedpaymentmethod.state.CreditMessagingContent
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.CreditMessagingState
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
+import com.braintreepayments.api.paypalsavedpaymentmethod.state.toCreditMessagingState
+import com.braintreepayments.api.paypalsavedpaymentmethod.state.toFiClusterState
+import com.braintreepayments.api.paypalsavedpaymentmethod.state.toCreditMessagingState
+import com.braintreepayments.api.paypalsavedpaymentmethod.state.toFiClusterState
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ComponentAppearance
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ContainerStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.CreditMessagingStyle
@@ -49,21 +63,7 @@ import kotlinx.coroutines.launch
  * Root component: shows a returning buyer's saved PayPal funding instrument (View FI), lets them
  * change it via the edit pencil (Edit FI), and shows Pay Later credit messaging.
  *
- * Public API is intentionally narrow -- five members total: the constructor, [initialize],
- * [setStyle], [setPayPalRequest], and [handleReturnToApp]. Everything else ([FiClusterState] /
- * [CreditMessagingState], the internal [client], sub-views, coroutine scope/jobs) is owned and
- * mutated by this view itself and never exposed.
- *
- * [initialize] is the only member that triggers network activity -- it starts the FI (and, if
- * enabled, credit-messaging) fetch and wires [callback] for the entire lifetime of the edit-FI
- * flow. There is no separate merchant-triggered refresh method.
- *
- * Style resolution precedence: `attrs` parsed via `obtainStyledAttributes` establish the initial
- * style at construction time; a later programmatic [setStyle] call fully replaces it.
- *
- * Phase 1 scope note: [client] is a mock implementation.
- * // TODO: Phase 2 -- back [client] with a real network implementation, and construct
- * `PayPalLauncher`/`PayPalClient` in [initialize] the way `PayPalButton.initialize` does.
+ * TODO: full documentation pass once the design is finalized.
  */
 class PayPalSavedPaymentMethodView @JvmOverloads constructor(
     context: Context,
@@ -79,11 +79,13 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
 
     private var style: PayPalSavedPaymentMethodViewStyle
 
-    /** Mock in Phase 1, real network client in Phase 2. Never exposed publicly -- reachable only
-     * from inside this view, per the finalized public API. */
-    internal var client: PayPalSavedPaymentMethodClient = PayPalSavedPaymentMethodClient()
+    /** Constructed in [initialize]. */
+    internal lateinit var client: PayPalSavedPaymentMethodClient
 
-    /** Set once via [initialize]; delivers the edit-FI flow's launch + final result events. */
+    /** Constructed in [initialize], mirrors `PayPalButton`'s [PayPalLauncher] ownership. */
+    private lateinit var payPalLauncher: PayPalLauncher
+    private var pendingRequestString: String? = null
+
     private var callback: PayPalSavedPaymentMethodLaunchCallback? = null
 
     private var payPalRequest: PayPalCheckoutRequest? = null
@@ -114,57 +116,47 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         applyStyle(style)
     }
 
-    /**
-     * One-shot setup: wires the request/callback needed for the edit-FI flow and starts this
-     * view's FI (and, if enabled, credit-messaging) fetch. The only member that triggers network
-     * activity -- there is no separate merchant-triggered refresh method.
-     *
-     * @param authorization a Tokenization Key or Client Token used to authenticate.
-     * @param payPalRequest the PayPal request configuration used by the edit-FI flow.
-     * @param callback      receives the edit-FI flow's launch + final result events.
-     */
+    /** Wires the edit-FI request/callback and starts the FI (+ credit-messaging) fetch. */
     fun initialize(
+        activityResultCaller: ActivityResultCaller,
         authorization: String,
+        appLinkReturnUrl: Uri,
         payPalRequest: PayPalCheckoutRequest,
-        callback: PayPalSavedPaymentMethodLaunchCallback
+        callback: PayPalSavedPaymentMethodLaunchCallback,
+        deepLinkFallbackUrlScheme: String? = null
     ) {
-        // TODO: Phase 2 -- construct a real network-backed client(context, authorization) here,
-        // the way PayPalButton.initialize builds PayPalClient. Phase 1's mock
-        // PayPalSavedPaymentMethodClient needs none of these parameters, so authorization is
-        // accepted (to keep the real public API shape) but unused for now.
+        payPalLauncher = PayPalLauncher(activityResultCaller)
+        client = PayPalSavedPaymentMethodClient(context, authorization, appLinkReturnUrl, deepLinkFallbackUrlScheme)
         this.payPalRequest = payPalRequest
         this.callback = callback
         startFetches()
     }
 
-    /**
-     * Updates the PayPal request configuration used by the edit-FI flow, independently of
-     * [initialize]. Read fresh at edit-tap time, not cached here -- the merchant's current
-     * [payPalRequest] is what gets forwarded, exactly like `PayPalButton.setPayPalRequest`.
-     */
-    fun setPayPalRequest(payPalRequest: PayPalCheckoutRequest) {
-        this.payPalRequest = payPalRequest
-    }
-
-    /**
-     * Handles the return from the PayPal authentication flow after a real browser-switch launch.
-     * The final outcome is delivered via [initialize]'s `callback`.
-     *
-     * // TODO: Phase 2 -- real signature/contract, but not exercised yet: this build's Phase 1
-     * edit-tap flow ([startEditFlow]) never performs a real browser-switch launch, so there is no
-     * real [Intent] for this to parse. Real implementation mirrors
-     * `PayPalButton.handleReturnToApp` (PayPalLauncher.handleReturnToApp -> tokenize ->
-     * fetch_selected_fi refresh -> re-render).
-     */
-    fun handleReturnToApp(intent: Intent) {
-        // Intentionally a no-op stub in Phase 1 -- see TODO above.
-    }
-
-    /** Sets the view's visual style. Fully replaces any style parsed from XML attrs. Safe to
-     * call at any time. */
+    /** Fully replaces any style parsed from XML attrs. */
     fun setStyle(style: PayPalSavedPaymentMethodViewStyle) {
         this.style = style
         applyStyle(style)
+    }
+
+    /** Handles the return from the PayPal auth flow browser switch. Call from `onResume`/`onNewIntent`. */
+    @OptIn(ExperimentalBetaApi::class)
+    fun handleReturnToApp(intent: Intent) {
+        val pendingRequest = pendingRequestString?.let { PayPalPendingRequest.Started(it) } ?: return
+        pendingRequestString = null
+
+        val authResult = payPalLauncher.handleReturnToApp(pendingRequest, intent)
+        when (authResult) {
+            is PayPalPaymentAuthResult.Success -> client.tokenize(authResult, ::onTokenizeResult)
+            is PayPalPaymentAuthResult.NoResult -> onEditFlowResult(PayPalResult.Cancel)
+            is PayPalPaymentAuthResult.Failure -> onEditFlowResult(PayPalResult.Failure(authResult.error))
+        }
+    }
+
+    private fun onTokenizeResult(result: PayPalResult) {
+        when (result) {
+            is PayPalResult.Success -> onEditFlowSuccess(result)
+            else -> onEditFlowResult(result)
+        }
     }
 
     override fun onDetachedFromWindow() {
@@ -180,104 +172,111 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
     private fun scope(): CoroutineScope =
         viewScope ?: CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { viewScope = it }
 
-    /** Triggers this view's own FI + credit-messaging fetches. Never called by the merchant --
-     * per the ownership model, fetches are lifecycle-triggered, not caller-triggered. */
+    /** Triggers this view's own FI + credit-messaging fetches. */
     private fun startFetches() {
+        fetchFI()
+        fetchCreditMessage()
+    }
+
+    @OptIn(ExperimentalBetaApi::class)
+    private fun fetchFI() {
         fiSection.setState(FiClusterState.Loading)
         fiFetchJob = scope().launch {
-            // TODO: Phase 2 -- pass the real paymentMethodIdJwt (from configuration/authorization)
-            val state = client.fetchFI(paymentMethodIdJwt = "").toFiClusterState()
+            val state = client.fetchFI(paymentMethodIdJwt = mockJwt()).toFiClusterState()
             lastFiClusterState = state
             fiSection.setState(state)
         }
+    }
 
+    @OptIn(ExperimentalBetaApi::class)
+    private fun fetchCreditMessage() {
         if (!style.showPayPalCreditMessaging) {
             creditMessagingView.setState(CreditMessagingState.Hidden)
             return
         }
         creditMessagingView.setState(CreditMessagingState.Loading)
         creditMessagingFetchJob = scope().launch {
-            // TODO: Phase 2 -- pass the real amount/contentAttributes for
-            // fetchCreditPresentmentMessages
-            val state = client.fetchCreditMessaging(amount = "", contentAttributes = emptyList())
-                .toCreditMessagingState()
+            val request = payPalRequest
+            //TODO-GA - revist request mapper to belong where?
+            val creditRequest = PayPalCreditMessagingRequest(
+                flowContext = FlowContext(),
+                messagePlacements = listOf(
+                    MessagePlacement(
+                        amount = Amount(
+                            currencyCode = request?.currencyCode.orEmpty(),
+                            value = request?.amount.orEmpty()
+                        )
+                    )
+                )
+            )
+            val state = client.fetchCreditPresentmentMessages(creditRequest).toCreditMessagingState()
             creditMessagingView.setState(state)
         }
     }
 
-    private fun Result<PayPalSavedPaymentMethodSummary>.toFiClusterState(): FiClusterState {
-        val summary = getOrNull() ?: return FiClusterState.NoNetworkLoad
-        val method = summary.paypalSavedPaymentMethods.firstOrNull()
-        val payer = summary.paypalPayer
-        return when {
-            method != null -> FiClusterState.Available(method)
-            payer != null -> FiClusterState.NoFiLoad(payer.email)
-            else -> FiClusterState.NoNetworkLoad
-        }
-    }
-
-    private fun Result<CreditMessagingContent>.toCreditMessagingState(): CreditMessagingState {
-        val content = getOrNull() ?: return CreditMessagingState.Hidden
-        return if (content.message.isBlank()) CreditMessagingState.Hidden else CreditMessagingState.Content(content)
-    }
-
-    /**
-     * Edit pencil tap -> loading -> stubbed result -> re-render. Real client wiring
-     * (`create_payment_resource`, tokenize, app-switch) is Phase 2 -- see inline TODOs.
-     */
+    /** Edit pencil tap -> auth request -> browser/app switch. Outcome arrives via [handleReturnToApp]. */
+    @OptIn(ExperimentalBetaApi::class)
     private fun startEditFlow() {
         val request = payPalRequest ?: return
+        val activity = findActivity() as? ComponentActivity ?: return
 
-        // TODO: Phase 2 -- this Started value is a Phase 1 stub, not a result of a real
-        // PayPalLauncher.launch call (see PayPalSavedPaymentMethodLaunchCallback's own TODO).
-        callback?.onSavedPaymentMethodLaunch(
-            PayPalPendingRequest.Started("phase1-stub-pending-request")
-        )
 
         showFullScreenLoader()
-        fiSection.setState(FiClusterState.Loading)
-        editFlowJob = scope().launch {
-            // TODO: Phase 2 -- real call adds edit_billing_agreement_jwt + app-switch params,
-            // launches the PayPal app or in-app browser per the parsed redirectType, then this
-            // whole method's remainder (tokenize + refresh) runs from handleReturnToApp instead,
-            // driven by a real return Intent -- not inline here.
-            val result = client.createPaymentResource(request)
-            result.fold(
-                onSuccess = { onEditFlowResourceCreated() },
-                onFailure = { error -> onEditFlowFailed(error) }
-            )
+
+        client.createPaymentAuthRequest(context, request) { paymentAuthRequest ->
+            when (paymentAuthRequest) {
+                is PayPalPaymentAuthRequest.ReadyToLaunch -> launchEditFlow(activity, paymentAuthRequest)
+                is PayPalPaymentAuthRequest.Failure -> onAuthRequestFailure(paymentAuthRequest.error)
+            }
         }
     }
 
-    private suspend fun onEditFlowResourceCreated() {
-        // Phase 1 stub: re-fetch FI to prove the re-render path works. Cannot invoke
-        // callback.onSavedPaymentMethodResult with PayPalResult.Success here --
-        // PayPalAccountNonce's constructor is internal to the PayPal module, so this build can't
-        // fabricate one; only Cancel/Failure are exercised end-to-end in Phase 1.
-        // TODO: Phase 2 -- tokenize the real paymentAuthResult (-> PayPalAccountNonce), refresh FI
-        // via fetch_selected_fi, then callback?.onSavedPaymentMethodResult(PayPalResult.Success(nonce)).
-        val state = client.fetchFI(paymentMethodIdJwt = "").toFiClusterState()
-        lastFiClusterState = state
-        fiSection.setState(state)
-        hideFullScreenLoader()
-    }
-
-    private fun onEditFlowFailed(error: Throwable) {
-        hideFullScreenLoader()
-        fiSection.setState(lastFiClusterState)
-        val payPalResult = if (error is PayPalSavedPaymentMethodClient.EditFlowCancelException) {
-            PayPalResult.Cancel
-        } else {
-            PayPalResult.Failure(error as? Exception ?: Exception(error))
+    private fun launchEditFlow(
+        activity: ComponentActivity,
+        paymentAuthRequest: PayPalPaymentAuthRequest.ReadyToLaunch
+    ) {
+        when (val pendingRequest = payPalLauncher.launch(activity, paymentAuthRequest)) {
+            is PayPalPendingRequest.Started -> {
+                pendingRequestString = pendingRequest.pendingRequestString
+                callback?.onSavedPaymentMethodLaunch(pendingRequest)
+            }
+            is PayPalPendingRequest.Failure -> onAuthRequestFailure(pendingRequest.error)
         }
-        callback?.onSavedPaymentMethodResult(payPalResult)
     }
 
     /**
-     * This view reaches outside its own bounds and dims/blocks the entire host screen while the
-     * edit flow's async work is in flight, rather than asking the merchant to render their own
-     * full-page loader.
+     * Auth-request creation or launch failed before ever reaching the browser switch -- surfaced
+     * via the launch callback (matching `PayPalButton`), not the final result callback.
      */
+    private fun onAuthRequestFailure(error: Exception) {
+        fiSection.setState(lastFiClusterState)
+        hideFullScreenLoader()
+        callback?.onSavedPaymentMethodLaunch(PayPalPendingRequest.Failure(error))
+    }
+
+    /** Refetches the FI keyed by the just-approved order id, then reports success to the merchant. */
+    @OptIn(ExperimentalBetaApi::class)
+    private fun onEditFlowSuccess(result: PayPalResult.Success) {
+        editFlowJob = scope().launch {
+            hideFullScreenLoader()
+            callback?.onSavedPaymentMethodResult(result)
+            val state = client.refetchFI(orderId = result.nonce.paymentId.orEmpty()).toFiClusterState()
+            lastFiClusterState = state
+            fiSection.setState(state)
+        }
+    }
+
+    /** Cancel/failure outcome of the edit-FI flow: restore the last known FI state and notify the merchant. */
+    @OptIn(ExperimentalBetaApi::class)
+    private fun onEditFlowResult(result: PayPalResult) {
+        editFlowJob = scope().launch {
+            fiSection.setState(lastFiClusterState)
+            hideFullScreenLoader()
+            callback?.onSavedPaymentMethodResult(result)
+        }
+    }
+
+    /** Dims/blocks the entire host screen while edit-flow async work is in flight. */
     private fun showFullScreenLoader() {
         if (fullScreenLoaderOverlay != null) return
         val decorView = findActivity()?.window?.decorView as? ViewGroup ?: return
@@ -364,12 +363,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         )
     }
 
-    /**
-     * Credit messaging anchors under the label's start position (`logo width +
-     * label.marginStartDp`), regardless of the label's own visibility -- except when both logo
-     * and label are hidden, where it follows normal flow and aligns with FiSection instead
-     * (margin 0, since `horizontalPaddingDp` is already applied as this view's own padding).
-     */
+    /** Anchors under the label's start position; falls back to FiSection when logo+label hidden. */
     private fun creditMessagingAnchorMarginPx(resolvedStyle: PayPalSavedPaymentMethodStyleResolver): Int {
         if (!resolvedStyle.showLogo && !resolvedStyle.showLabel) return 0
         val logoWidth = if (resolvedStyle.showLogo) resolvedStyle.logoWidthDp else 0f
@@ -380,12 +374,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this, resources.displayMetrics)
 }
 
-/**
- * Parses [attrs] into a [PayPalSavedPaymentMethodViewStyle]. Mirrors that class's field/nesting
- * shape 1:1 -- an attr with no value in the XML leaves its style field `null`, which the
- * [PayPalSavedPaymentMethodStyleResolver] then resolves to the SDK default, exactly as a
- * programmatically-built style with that field unset would.
- */
+/** Parses [attrs] into a [PayPalSavedPaymentMethodViewStyle]; unset attrs resolve to SDK defaults. */
 private fun styleFromAttrs(
     context: Context,
     attrs: AttributeSet?,
@@ -456,3 +445,11 @@ private fun TypedArray.resourceIdOrNull(index: Int): Int? =
 
 private fun TypedArray.dimensionOrNull(index: Int, density: Float): Float? =
     if (hasValue(index)) getDimension(index, 0f) / density else null
+
+private fun mockJwt(): String {
+    // TODO: Phase 2 -- pass the real paymentMethodIdJwt (from configuration/authorization)
+    //val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiJlYWE0N2UwOS02ZjYyLTRkNTAtYTdkYy00MDVlYjA1YmExMTAiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJ2N3gycmIyMjZkeDRwcjdiIiwiZXhwIjoxNzg2MDgwMTU3LCJwbWlkIjoiMmhnM2hjZXkifQ.maoM82NC5uUInBykyIZ-xPxrTwtdOzYj6BKls0aUq7c4zqNDmRsM8l55MEOtMOFmBcdcwSza-IWE2gmX_SSXOA"
+    //val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiI5MzRiOGIyOC1hODU4LTQ0NmMtYjg3MC0wMmQ2ZjFkNzg2MzAiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3MjAxOTg4LCJwbWlkIjoibnYybnF2ajMifQ.uDZFnstbLIY7gZSD-2UgsJOhPnbgALybeLVl8IK5YcPqKs6Vlp3vizSkFKwEcfwM8tkuHUP5CUpuh_rQt6c95Q"
+    val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiI4MGZhNTc4Zi02ZWU5LTQ2ZjctYTA2NC1jYTAzMDJkMjFhMzciLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3MTQ4MTcwLCJwbWlkIjoibnYybnF2ajMifQ.OWfc4Guoa40JegvUOGTUvhmgTwkx83wHbz6xX8ko9nF_b7XxS4zsEl5mtD_JfiWasHgJGVVMHijTgu8ieS767A"
+    return jwt
+}

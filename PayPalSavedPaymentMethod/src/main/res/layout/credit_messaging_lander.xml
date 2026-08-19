@@ -2,7 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/psp_bottom_sheet_background"
     android:paddingTop="@dimen/psp_lander_padding"
@@ -22,6 +22,7 @@
     <WebView
         android:id="@+id/psp_lander_webview"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/psp_lander_webview_height" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
 </LinearLayout>
