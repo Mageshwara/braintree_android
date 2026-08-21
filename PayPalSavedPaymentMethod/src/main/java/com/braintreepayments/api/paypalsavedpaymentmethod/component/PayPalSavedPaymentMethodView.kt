@@ -4,12 +4,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.res.TypedArray
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.util.AttributeSet
-import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -22,6 +19,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultCaller
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
 import com.braintreepayments.api.core.ExperimentalBetaApi
@@ -42,14 +40,6 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.state.CreditMessagingS
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.toCreditMessagingState
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.toFiClusterState
-import com.braintreepayments.api.paypalsavedpaymentmethod.state.toCreditMessagingState
-import com.braintreepayments.api.paypalsavedpaymentmethod.state.toFiClusterState
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ComponentAppearance
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ContainerStyle
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.CreditMessagingStyle
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.FundingInstrumentStyle
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalLabelStyle
-import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalLogoStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodStyleResolver
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodViewStyle
 import kotlinx.coroutines.CoroutineScope
@@ -65,22 +55,22 @@ import kotlinx.coroutines.launch
  *
  * TODO: full documentation pass once the design is finalized.
  */
+@Suppress("TooManyFunctions")
 class PayPalSavedPaymentMethodView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : LinearLayout(context, attrs, defStyleAttr) {
 
-    private val logoView: ImageView
-    private val labelView: TextView
+    private val payPalLogoView: ImageView
+    private val payPalLabelView: TextView
     private val fiSection: FiSection
     private val creditMessagingView: CreditMessagingView
     private val containerBackground = GradientDrawable()
-
     private var style: PayPalSavedPaymentMethodViewStyle
 
     /** Constructed in [initialize]. */
-    internal lateinit var client: PayPalSavedPaymentMethodClient
+    private lateinit var payPalSavedPaymentMethodClient: PayPalSavedPaymentMethodClient
 
     /** Constructed in [initialize], mirrors `PayPalButton`'s [PayPalLauncher] ownership. */
     private lateinit var payPalLauncher: PayPalLauncher
@@ -102,17 +92,15 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         orientation = VERTICAL
         LayoutInflater.from(context).inflate(R.layout.saved_paypal_payment_method_view, this, true)
 
-        logoView = findViewById(R.id.psp_logo)
-        labelView = findViewById(R.id.psp_label)
-        fiSection = findViewById(R.id.psp_fi_section)
-        creditMessagingView = findViewById(R.id.psp_credit_messaging)
+        payPalLogoView = findViewById(R.id.paypal_saved_payment_method_paypal_logo)
+        payPalLabelView = findViewById(R.id.paypal_saved_payment_method_paypal_label)
+        fiSection = findViewById(R.id.paypal_saved_payment_method_fi_section)
+        creditMessagingView = findViewById(R.id.paypal_saved_payment_method_credit_messaging)
 
         fiSection.setOnEditClickListener { startEditFlow() }
 
-        containerBackground.shape = GradientDrawable.RECTANGLE
-        background = containerBackground
-
         style = styleFromAttrs(context, attrs, defStyleAttr)
+        setupBackground()
         applyStyle(style)
     }
 
@@ -126,7 +114,12 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         deepLinkFallbackUrlScheme: String? = null
     ) {
         payPalLauncher = PayPalLauncher(activityResultCaller)
-        client = PayPalSavedPaymentMethodClient(context, authorization, appLinkReturnUrl, deepLinkFallbackUrlScheme)
+        payPalSavedPaymentMethodClient = PayPalSavedPaymentMethodClient(
+            context,
+            authorization,
+            appLinkReturnUrl,
+            deepLinkFallbackUrlScheme
+        )
         this.payPalRequest = payPalRequest
         this.callback = callback
         startFetches()
@@ -146,7 +139,8 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
 
         val authResult = payPalLauncher.handleReturnToApp(pendingRequest, intent)
         when (authResult) {
-            is PayPalPaymentAuthResult.Success -> client.tokenize(authResult, ::onTokenizeResult)
+            is PayPalPaymentAuthResult.Success ->
+                payPalSavedPaymentMethodClient.tokenize(authResult, ::onTokenizeResult)
             is PayPalPaymentAuthResult.NoResult -> onEditFlowResult(PayPalResult.Cancel)
             is PayPalPaymentAuthResult.Failure -> onEditFlowResult(PayPalResult.Failure(authResult.error))
         }
@@ -182,7 +176,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
     private fun fetchFI() {
         fiSection.setState(FiClusterState.Loading)
         fiFetchJob = scope().launch {
-            val state = client.fetchFI(paymentMethodIdJwt = mockJwt()).toFiClusterState()
+            val state = payPalSavedPaymentMethodClient.fetchFI(paymentMethodIdJwt = mockJwt()).toFiClusterState()
             lastFiClusterState = state
             fiSection.setState(state)
         }
@@ -197,7 +191,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         creditMessagingView.setState(CreditMessagingState.Loading)
         creditMessagingFetchJob = scope().launch {
             val request = payPalRequest
-            //TODO-GA - revist request mapper to belong where?
+            // TODO-GA - revist request mapper to belong where?
             val creditRequest = PayPalCreditMessagingRequest(
                 flowContext = FlowContext(),
                 messagePlacements = listOf(
@@ -209,7 +203,9 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
                     )
                 )
             )
-            val state = client.fetchCreditPresentmentMessages(creditRequest).toCreditMessagingState()
+            val state = payPalSavedPaymentMethodClient
+                .fetchCreditPresentmentMessages(creditRequest)
+                .toCreditMessagingState()
             creditMessagingView.setState(state)
         }
     }
@@ -220,10 +216,9 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         val request = payPalRequest ?: return
         val activity = findActivity() as? ComponentActivity ?: return
 
-
         showFullScreenLoader()
 
-        client.createPaymentAuthRequest(context, request) { paymentAuthRequest ->
+        payPalSavedPaymentMethodClient.createPaymentAuthRequest(context, request) { paymentAuthRequest ->
             when (paymentAuthRequest) {
                 is PayPalPaymentAuthRequest.ReadyToLaunch -> launchEditFlow(activity, paymentAuthRequest)
                 is PayPalPaymentAuthRequest.Failure -> onAuthRequestFailure(paymentAuthRequest.error)
@@ -260,7 +255,9 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         editFlowJob = scope().launch {
             hideFullScreenLoader()
             callback?.onSavedPaymentMethodResult(result)
-            val state = client.refetchFI(orderId = result.nonce.paymentId.orEmpty()).toFiClusterState()
+            val state = payPalSavedPaymentMethodClient
+                .refetchFI(orderId = result.nonce.paymentId.orEmpty())
+                .toFiClusterState()
             lastFiClusterState = state
             fiSection.setState(state)
         }
@@ -282,7 +279,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         val decorView = findActivity()?.window?.decorView as? ViewGroup ?: return
 
         val overlay = FrameLayout(context).apply {
-            setBackgroundColor(Color.argb(153, 0, 0, 0))
+            setBackgroundColor(ContextCompat.getColor(context, R.color.paypal_saved_payment_method_loader_scrim_color))
             isClickable = true
             isFocusable = true
         }
@@ -314,35 +311,40 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         return null
     }
 
-    private fun applyStyle(style: PayPalSavedPaymentMethodViewStyle) {
-        val resolvedStyle = PayPalSavedPaymentMethodStyleResolver(style)
+    private fun setupBackground() {
+        containerBackground.shape = GradientDrawable.RECTANGLE
+        background = containerBackground
+    }
 
-        logoView.isVisible = resolvedStyle.showLogo
-        labelView.isVisible = resolvedStyle.showLabel
+    private fun applyStyle(style: PayPalSavedPaymentMethodViewStyle) {
+        val resolvedStyle = PayPalSavedPaymentMethodStyleResolver(context, style)
+
+        payPalLogoView.isVisible = resolvedStyle.showPayPalLogo
+        payPalLabelView.isVisible = resolvedStyle.showLabel
 
         // LogoStyle's contract fixes the logo's bounding box at 1:1 (width == height). The actual
         // ic_paypal_brand_logo asset is a non-square 48x30 baked-in shape, so it's drawn with
         // FIT_CENTER inside that square footprint -- undistorted, letterboxed -- rather than
         // stretched to fill it.
-        val logoSizePx = resolvedStyle.logoWidthDp.dpToPx().toInt()
-        logoView.layoutParams = logoView.layoutParams.apply {
+        val logoSizePx = resolvedStyle.logoWidthDp.dpToPx(resources).toInt()
+        payPalLogoView.layoutParams = payPalLogoView.layoutParams.apply {
             width = logoSizePx
             height = logoSizePx
         }
-        logoView.requestLayout()
+        payPalLogoView.requestLayout()
 
-        labelView.setTextColor(resolvedStyle.textColor)
-        labelView.setTextSize(TypedValue.COMPLEX_UNIT_SP, resolvedStyle.labelFontSizeSp)
+        payPalLabelView.setTextColor(resolvedStyle.textColor)
+        payPalLabelView.setTextSize(TypedValue.COMPLEX_UNIT_SP, resolvedStyle.labelFontSizeSp)
         resolvedStyle.fontResId?.let { fontResId ->
             runCatching { ResourcesCompat.getFont(context, fontResId) }
                 .getOrNull()
-                ?.let { labelView.typeface = it }
+                ?.let { payPalLabelView.typeface = it }
         }
-        (labelView.layoutParams as? LinearLayout.LayoutParams)?.marginStart =
-            if (resolvedStyle.showLogo) resolvedStyle.labelMarginStartDp.dpToPx().toInt() else 0
+        (payPalLabelView.layoutParams as? LinearLayout.LayoutParams)?.marginStart =
+            if (resolvedStyle.showPayPalLogo) resolvedStyle.labelMarginStartDp.dpToPx(resources).toInt() else 0
 
         (fiSection.layoutParams as? LinearLayout.LayoutParams)?.marginStart =
-            resolvedStyle.fundingInstrumentMarginStartDp.dpToPx().toInt()
+            resolvedStyle.fundingInstrumentMarginStartDp.dpToPx(resources).toInt()
         fiSection.applyStyle(resolvedStyle)
 
         creditMessagingView.applyStyle(resolvedStyle)
@@ -350,106 +352,34 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
             creditMessagingAnchorMarginPx(resolvedStyle)
 
         containerBackground.setColor(resolvedStyle.backgroundColor)
-        containerBackground.cornerRadius = resolvedStyle.cornerRadiusDp.dpToPx()
-        containerBackground.setStroke(resolvedStyle.borderWidthDp.dpToPx().toInt(), resolvedStyle.borderColor)
+        containerBackground.cornerRadius = resolvedStyle.cornerRadiusDp.dpToPx(resources)
+        containerBackground.setStroke(resolvedStyle.borderWidthDp.dpToPx(resources).toInt(), resolvedStyle.borderColor)
         resolvedStyle.heightDp?.let {
-            layoutParams = layoutParams.apply { height = it.dpToPx().toInt() }
+            layoutParams = layoutParams.apply { height = it.dpToPx(resources).toInt() }
         }
         setPadding(
-            resolvedStyle.horizontalPaddingDp.dpToPx().toInt(),
-            resolvedStyle.verticalPaddingDp.dpToPx().toInt(),
-            resolvedStyle.horizontalPaddingDp.dpToPx().toInt(),
-            resolvedStyle.verticalPaddingDp.dpToPx().toInt()
+            resolvedStyle.horizontalPaddingDp.dpToPx(resources).toInt(),
+            resolvedStyle.verticalPaddingDp.dpToPx(resources).toInt(),
+            resolvedStyle.horizontalPaddingDp.dpToPx(resources).toInt(),
+            resolvedStyle.verticalPaddingDp.dpToPx(resources).toInt()
         )
     }
 
     /** Anchors under the label's start position; falls back to FiSection when logo+label hidden. */
     private fun creditMessagingAnchorMarginPx(resolvedStyle: PayPalSavedPaymentMethodStyleResolver): Int {
-        if (!resolvedStyle.showLogo && !resolvedStyle.showLabel) return 0
-        val logoWidth = if (resolvedStyle.showLogo) resolvedStyle.logoWidthDp else 0f
-        return (logoWidth + resolvedStyle.labelMarginStartDp).dpToPx().toInt()
-    }
-
-    private fun Float.dpToPx(): Float =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this, resources.displayMetrics)
-}
-
-/** Parses [attrs] into a [PayPalSavedPaymentMethodViewStyle]; unset attrs resolve to SDK defaults. */
-private fun styleFromAttrs(
-    context: Context,
-    attrs: AttributeSet?,
-    defStyleAttr: Int
-): PayPalSavedPaymentMethodViewStyle {
-    val typedArray = context.obtainStyledAttributes(
-        attrs,
-        R.styleable.PayPalSavedPaymentMethodView,
-        defStyleAttr,
-        0
-    )
-    return try {
-        val density = context.resources.displayMetrics.density
-        val scaledDensity = context.resources.displayMetrics.scaledDensity
-
-        val componentTheme = ComponentAppearance(
-            backgroundColor = typedArray.colorOrNull(R.styleable.PayPalSavedPaymentMethodView_componentBackgroundColor),
-            textColor = typedArray.colorOrNull(R.styleable.PayPalSavedPaymentMethodView_componentTextColor),
-            baseFontSizeSp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_componentBaseFontSizeSp, scaledDensity),
-            fontResId = typedArray.resourceIdOrNull(R.styleable.PayPalSavedPaymentMethodView_componentFontResId)
-        )
-
-        val container = ContainerStyle(
-            heightDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_containerHeightDp, density),
-            horizontalPaddingDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_containerHorizontalPaddingDp, density),
-            verticalPaddingDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_containerVerticalPaddingDp, density),
-            cornerRadiusDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_containerCornerRadiusDp, density),
-            borderColor = typedArray.colorOrNull(R.styleable.PayPalSavedPaymentMethodView_containerBorderColor),
-            borderWidthDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_containerBorderWidthDp, density),
-            logo = PayPalLogoStyle(
-                widthDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_logoWidthDp, density)
-            ),
-            label = PayPalLabelStyle(
-                fontSizeSp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_labelFontSizeSp, scaledDensity),
-                marginStartDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_labelMarginStartDp, density)
-            ),
-            fundingInstrument = FundingInstrumentStyle(
-                textFontSizeSp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_fundingInstrumentTextFontSizeSp, scaledDensity),
-                editIconSizeDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_fundingInstrumentEditIconSizeDp, density),
-                marginStartDp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_fundingInstrumentMarginStartDp, density)
-            ),
-            creditMessaging = CreditMessagingStyle(
-                fontSizeSp = typedArray.dimensionOrNull(R.styleable.PayPalSavedPaymentMethodView_creditMessagingFontSizeSp, scaledDensity),
-                linkColor = typedArray.colorOrNull(R.styleable.PayPalSavedPaymentMethodView_creditMessagingLinkColor)
-            )
-        )
-
-        PayPalSavedPaymentMethodViewStyle(
-            showPayPalLogo = typedArray.getBoolean(R.styleable.PayPalSavedPaymentMethodView_showLogo, true),
-            showPayPalLabel = typedArray.getBoolean(R.styleable.PayPalSavedPaymentMethodView_showLabel, true),
-            showPayPalCreditMessaging = typedArray.getBoolean(
-                R.styleable.PayPalSavedPaymentMethodView_showCreditMessaging,
-                true
-            ),
-            componentAppearance = componentTheme,
-            container = container
-        )
-    } finally {
-        typedArray.recycle()
+        if (!resolvedStyle.showPayPalLogo && !resolvedStyle.showLabel) return 0
+        val logoWidth = if (resolvedStyle.showPayPalLogo) resolvedStyle.logoWidthDp else 0f
+        return (logoWidth + resolvedStyle.labelMarginStartDp).dpToPx(resources).toInt()
     }
 }
-
-private fun TypedArray.colorOrNull(index: Int): Int? =
-    if (hasValue(index)) getColor(index, 0) else null
-
-private fun TypedArray.resourceIdOrNull(index: Int): Int? =
-    if (hasValue(index)) getResourceId(index, 0) else null
-
-private fun TypedArray.dimensionOrNull(index: Int, density: Float): Float? =
-    if (hasValue(index)) getDimension(index, 0f) / density else null
 
 private fun mockJwt(): String {
     // TODO: Phase 2 -- pass the real paymentMethodIdJwt (from configuration/authorization)
-    //val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiJlYWE0N2UwOS02ZjYyLTRkNTAtYTdkYy00MDVlYjA1YmExMTAiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJ2N3gycmIyMjZkeDRwcjdiIiwiZXhwIjoxNzg2MDgwMTU3LCJwbWlkIjoiMmhnM2hjZXkifQ.maoM82NC5uUInBykyIZ-xPxrTwtdOzYj6BKls0aUq7c4zqNDmRsM8l55MEOtMOFmBcdcwSza-IWE2gmX_SSXOA"
-    //val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiI5MzRiOGIyOC1hODU4LTQ0NmMtYjg3MC0wMmQ2ZjFkNzg2MzAiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3MjAxOTg4LCJwbWlkIjoibnYybnF2ajMifQ.uDZFnstbLIY7gZSD-2UgsJOhPnbgALybeLVl8IK5YcPqKs6Vlp3vizSkFKwEcfwM8tkuHUP5CUpuh_rQt6c95Q"
-    val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiI4MGZhNTc4Zi02ZWU5LTQ2ZjctYTA2NC1jYTAzMDJkMjFhMzciLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3MTQ4MTcwLCJwbWlkIjoibnYybnF2ajMifQ.OWfc4Guoa40JegvUOGTUvhmgTwkx83wHbz6xX8ko9nF_b7XxS4zsEl5mtD_JfiWasHgJGVVMHijTgu8ieS767A"
+    // val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiJlYWE0N2UwOS02ZjYyLTRkNTAtYTdkYy00MDVlYjA1YmExMTAiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJ2N3gycmIyMjZkeDRwcjdiIiwiZXhwIjoxNzg2MDgwMTU3LCJwbWlkIjoiMmhnM2hjZXkifQ.maoM82NC5uUInBykyIZ-xPxrTwtdOzYj6BKls0aUq7c4zqNDmRsM8l55MEOtMOFmBcdcwSza-IWE2gmX_SSXOA"
+    // val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiI5MzRiOGIyOC1hODU4LTQ0NmMtYjg3MC0wMmQ2ZjFkNzg2MzAiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3MjAxOTg4LCJwbWlkIjoibnYybnF2ajMifQ.uDZFnstbLIY7gZSD-2UgsJOhPnbgALybeLVl8IK5YcPqKs6Vlp3vizSkFKwEcfwM8tkuHUP5CUpuh_rQt6c95Q"
+    // val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiI4MGZhNTc4Zi02ZWU5LTQ2ZjctYTA2NC1jYTAzMDJkMjFhMzciLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3MTQ4MTcwLCJwbWlkIjoibnYybnF2ajMifQ.OWfc4Guoa40JegvUOGTUvhmgTwkx83wHbz6xX8ko9nF_b7XxS4zsEl5mtD_JfiWasHgJGVVMHijTgu8ieS767A"
+
+    // val jwt ="eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiI5MTFhYzA1Zi1iNWU4LTQ0NGUtYjQxNS0yNWNiNTQwMGEwMDkiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3MzgxMzAxLCJwbWlkIjoibnYybnF2ajMifQ.l8E0stH_6KDi3pOPAhIMmGKq9BdMgLMg2MKl5Pj2mS0ByXfkrhPMt9hnoN52QXdXyumNlnN58LKPg5OGp8aMDA"
+    val jwt = "eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ0LXNhbmQtcHJlZnBtLTdhZTUxNmYifQ.eyJqdGkiOiIzMTA0Yjc4ZC00YWU5LTRjODMtYTI0Yy02NzEyZGE2NWRmYTAiLCJpc3MiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20iLCJzdWIiOiJyM256dDY0Y3ZmNXhreHJ0IiwiZXhwIjoxNzg3Mzg4MjAzLCJwbWlkIjoibnYybnF2ajMifQ.H_O2GARTf5Cj0gHsEI1Ze1ccFGEX5pG6E_NI2sjERd8sgSIvtOgu7iztyneewTWcvomXWxNAxK6FqU5WtuHSEQ"
     return jwt
 }

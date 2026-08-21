@@ -29,14 +29,14 @@ internal class CreditMessagingLander(context: Context) :
 
     init {
         setContentView(R.layout.credit_messaging_lander)
-        webView = findViewById(R.id.psp_lander_webview)
+        webView = findViewById(R.id.paypal_saved_payment_method_lander_webview)
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 view.loadUrl(request.url.toString())
                 return true
             }
         }
-        findViewById<ImageView>(R.id.psp_lander_close).also { closeButton ->
+        findViewById<ImageView>(R.id.paypal_saved_payment_method_lander_close).also { closeButton ->
             closeButton.setOnClickListener { dismiss() }
             ViewCompat.setOnApplyWindowInsetsListener(closeButton) { view, insets ->
                 val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top

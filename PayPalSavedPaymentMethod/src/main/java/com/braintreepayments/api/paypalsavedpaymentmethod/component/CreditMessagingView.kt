@@ -22,6 +22,10 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.state.CreditMessagingC
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.CreditMessagingState
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodStyleResolver
 
+private const val SHIMMER_MAX_ALPHA = 1f
+private const val SHIMMER_MIN_ALPHA = 0.4f
+private const val SHIMMER_DURATION_MS = 600L
+
 /**
  * The Pay Later / credit messaging row. Renders one of three states:
  * [CreditMessagingState.Loading] (shimmer), [CreditMessagingState.Content] (message + "Learn
@@ -51,8 +55,8 @@ internal class CreditMessagingView @JvmOverloads constructor(
     init {
         LayoutInflater.from(context).inflate(R.layout.credit_messaging_view, this, true)
 
-        shimmerView = findViewById(R.id.psp_credit_messaging_shimmer)
-        textView = findViewById(R.id.psp_credit_messaging_text)
+        shimmerView = findViewById(R.id.paypal_saved_payment_method_credit_messaging_shimmer)
+        textView = findViewById(R.id.paypal_saved_payment_method_credit_messaging_text)
         textView.movementMethod = LinkMovementMethod.getInstance()
         // ClickableSpan already gives per-word feedback; a full-line highlight box looks wrong
         // for a single-line compliance message.
@@ -153,8 +157,8 @@ internal class CreditMessagingView @JvmOverloads constructor(
 
     private fun startShimmer() {
         if (shimmerAnimator != null) return
-        shimmerAnimator = ObjectAnimator.ofFloat(shimmerView, "alpha", 1f, 0.4f).apply {
-            duration = 600
+        shimmerAnimator = ObjectAnimator.ofFloat(shimmerView, "alpha", SHIMMER_MAX_ALPHA, SHIMMER_MIN_ALPHA).apply {
+            duration = SHIMMER_DURATION_MS
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             start()

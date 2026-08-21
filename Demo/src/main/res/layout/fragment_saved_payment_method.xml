@@ -42,9 +42,23 @@
             custom:containerBorderWidthDp="1dp"
             custom:containerHorizontalPaddingDp="16dp"
             custom:containerVerticalPaddingDp="12dp"
-            custom:logoWidthDp="56dp"
-            custom:labelFontSizeSp="16sp"
+            custom:payPalLogoWidthDp="50dp"
+            custom:payPalLabelFontSizeSp="16sp"
             custom:creditMessagingLinkColor="#EF6C00" />
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/saved_payment_method_default_style_label" />
+
+        <com.braintreepayments.api.paypalsavedpaymentmethod.component.PayPalSavedPaymentMethodView
+            android:id="@+id/saved_payment_method_view_default_style"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            custom:showPayPalCreditMessaging="false"
+            android:layout_marginTop="4dp" />
 
         <Button
             android:id="@+id/saved_payment_method_refresh_button"

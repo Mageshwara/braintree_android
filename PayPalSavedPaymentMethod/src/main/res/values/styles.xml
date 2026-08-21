@@ -9,7 +9,7 @@
     </style>
 
     <style name="PayPalSavedPaymentMethod_BottomSheetAnimation">
-        <item name="android:windowEnterAnimation">@anim/psp_slide_up</item>
-        <item name="android:windowExitAnimation">@anim/psp_slide_down</item>
+        <item name="android:windowEnterAnimation">@anim/paypal_saved_payment_method_slide_up</item>
+        <item name="android:windowExitAnimation">@anim/paypal_saved_payment_method_slide_down</item>
     </style>
 </resources>

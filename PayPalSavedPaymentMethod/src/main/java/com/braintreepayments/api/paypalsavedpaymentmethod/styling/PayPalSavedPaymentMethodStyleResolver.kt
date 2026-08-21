@@ -1,32 +1,16 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod.styling
 
-import android.graphics.Color
-
-// SDK-provided defaults, sourced from the Figma-confirmed v1 happy-path spec.
-// Centralized here so no resolved value is ever an inline literal in view code.
-private const val DEFAULT_BACKGROUND_COLOR = Color.WHITE
-private val DEFAULT_TEXT_COLOR = Color.parseColor("#222222")
-private val DEFAULT_BORDER_COLOR = Color.TRANSPARENT
-private const val DEFAULT_HORIZONTAL_PADDING_DP = 0f
-private const val DEFAULT_VERTICAL_PADDING_DP = 10f
-private const val DEFAULT_CORNER_RADIUS_DP = 0f
-private const val DEFAULT_BORDER_WIDTH_DP = 0f
-
-// TODO: patch's shipped LogoStyle.widthDp default was 48f; styling.md/Figma says 24f.
-// Using 24f per the Styling doc's source-of-truth call-out (§1 open item) — flag to
-// design if this needs to change.
-private const val DEFAULT_LOGO_WIDTH_DP = 24f
-
-private const val DEFAULT_LABEL_FONT_SIZE_SP = 20f
-private const val DEFAULT_LABEL_MARGIN_START_DP = 6f
-private const val DEFAULT_FUNDING_INSTRUMENT_TEXT_FONT_SIZE_SP = 14f
-private const val DEFAULT_EDIT_ICON_SIZE_DP = 16f
-private const val DEFAULT_FUNDING_INSTRUMENT_MARGIN_START_DP = 12f
-private const val DEFAULT_CREDIT_MESSAGING_FONT_SIZE_SP = 16f
+import android.content.Context
+import androidx.core.content.ContextCompat
+import com.braintreepayments.api.paypalsavedpaymentmethod.R
 
 /**
  * Resolves a (possibly-partial) [PayPalSavedPaymentMethodViewStyle] into concrete values a
  * renderer can use directly, with no further null-fallback logic needed downstream.
+ *
+ * SDK-provided defaults (colors + dp/sp sizes) are sourced from Android resources rather than
+ * inline literals, so they automatically pick up `values-night/` overrides and react to the
+ * system light/dark theme.
  *
  * Two resolution shapes are used, per the Styling doc's "Key semantics":
  * - Most fields are 2-step: explicit value if set, else the SDK-provided default.
@@ -41,55 +25,67 @@ private const val DEFAULT_CREDIT_MESSAGING_FONT_SIZE_SP = 16f
  * - [creditMessagingLinkColor] — `null` means the link renders bold + underlined in [textColor]
  *   instead of a distinct link color; this is a rendering-mode switch, not a color substitution.
  */
-internal class PayPalSavedPaymentMethodStyleResolver(style: PayPalSavedPaymentMethodViewStyle) {
+internal class PayPalSavedPaymentMethodStyleResolver(
+    private val context: Context,
+    style: PayPalSavedPaymentMethodViewStyle
+) {
 
-    val showLogo: Boolean = style.showPayPalLogo
+    private val density = context.resources.displayMetrics.density
+    private val scaledDensity = context.resources.displayMetrics.scaledDensity
+
+    private fun dp(resId: Int): Float = context.resources.getDimension(resId) / density
+    private fun sp(resId: Int): Float = context.resources.getDimension(resId) / scaledDensity
+    private fun color(resId: Int): Int = ContextCompat.getColor(context, resId)
+
+    val showPayPalLogo: Boolean = style.showPayPalLogo
     val showLabel: Boolean = style.showPayPalLabel
     val showCreditMessaging: Boolean = style.showPayPalCreditMessaging
 
     private val baseFontSizeSp: Float? = style.componentAppearance?.baseFontSizeSp
 
     val backgroundColor: Int =
-        style.componentAppearance?.backgroundColor ?: DEFAULT_BACKGROUND_COLOR
+        style.componentAppearance?.backgroundColor
+            ?: color(R.color.paypal_saved_payment_method_default_background_color)
     val textColor: Int =
-        style.componentAppearance?.textColor ?: DEFAULT_TEXT_COLOR
+        style.componentAppearance?.textColor ?: color(R.color.paypal_saved_payment_method_default_text_color)
     val fontResId: Int? = style.componentAppearance?.fontResId
 
     val heightDp: Float? = style.container?.heightDp
     val horizontalPaddingDp: Float =
-        style.container?.horizontalPaddingDp ?: DEFAULT_HORIZONTAL_PADDING_DP
+        style.container?.horizontalPaddingDp ?: dp(R.dimen.paypal_saved_payment_method_default_horizontal_padding)
     val verticalPaddingDp: Float =
-        style.container?.verticalPaddingDp ?: DEFAULT_VERTICAL_PADDING_DP
+        style.container?.verticalPaddingDp ?: dp(R.dimen.paypal_saved_payment_method_default_vertical_padding)
     val cornerRadiusDp: Float =
-        style.container?.cornerRadiusDp ?: DEFAULT_CORNER_RADIUS_DP
+        style.container?.cornerRadiusDp ?: dp(R.dimen.paypal_saved_payment_method_default_corner_radius)
     val borderColor: Int =
-        style.container?.borderColor ?: DEFAULT_BORDER_COLOR
+        style.container?.borderColor ?: color(R.color.paypal_saved_payment_method_default_border_color)
     val borderWidthDp: Float =
-        style.container?.borderWidthDp ?: DEFAULT_BORDER_WIDTH_DP
+        style.container?.borderWidthDp ?: dp(R.dimen.paypal_saved_payment_method_default_border_width)
 
     val logoWidthDp: Float =
-        style.container?.logo?.widthDp ?: DEFAULT_LOGO_WIDTH_DP
+        style.container?.logo?.widthDp ?: dp(R.dimen.paypal_saved_payment_method_default_logo_width)
 
     val labelFontSizeSp: Float =
         style.container?.label?.fontSizeSp
             ?: baseFontSizeSp
-            ?: DEFAULT_LABEL_FONT_SIZE_SP
+            ?: sp(R.dimen.paypal_saved_payment_method_default_label_font_size)
     val labelMarginStartDp: Float =
-        style.container?.label?.marginStartDp ?: DEFAULT_LABEL_MARGIN_START_DP
+        style.container?.label?.marginStartDp ?: dp(R.dimen.paypal_saved_payment_method_default_label_margin_start)
 
     val fundingInstrumentTextFontSizeSp: Float =
         style.container?.fundingInstrument?.textFontSizeSp
             ?: baseFontSizeSp
-            ?: DEFAULT_FUNDING_INSTRUMENT_TEXT_FONT_SIZE_SP
+            ?: sp(R.dimen.paypal_saved_payment_method_default_funding_instrument_text_font_size)
     val editIconSizeDp: Float =
-        style.container?.fundingInstrument?.editIconSizeDp ?: DEFAULT_EDIT_ICON_SIZE_DP
+        style.container?.fundingInstrument?.editIconSizeDp
+            ?: dp(R.dimen.paypal_saved_payment_method_default_edit_icon_size)
     val fundingInstrumentMarginStartDp: Float =
         style.container?.fundingInstrument?.marginStartDp
-            ?: DEFAULT_FUNDING_INSTRUMENT_MARGIN_START_DP
+            ?: dp(R.dimen.paypal_saved_payment_method_default_funding_instrument_margin_start)
 
     val creditMessagingFontSizeSp: Float =
         style.container?.creditMessaging?.fontSizeSp
             ?: baseFontSizeSp
-            ?: DEFAULT_CREDIT_MESSAGING_FONT_SIZE_SP
+            ?: sp(R.dimen.paypal_saved_payment_method_default_credit_messaging_font_size)
     val creditMessagingLinkColor: Int? = style.container?.creditMessaging?.linkColor
 }

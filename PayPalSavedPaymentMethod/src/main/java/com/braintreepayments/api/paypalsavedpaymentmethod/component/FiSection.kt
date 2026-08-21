@@ -3,7 +3,6 @@ package com.braintreepayments.api.paypalsavedpaymentmethod.component
 import android.content.Context
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.util.TypedValue
@@ -12,25 +11,23 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodStyleResolver
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
-// Pill background/padding are fixed SDK constants, not merchant-configurable -- the current
+// Pill corner radius/padding are fixed SDK constants, not merchant-configurable -- the current
 // PayPalSavedPaymentMethodViewStyle contract (see FundingInstrumentStyle) intentionally has no
-// backgroundColor/cornerRadiusDp/paddingDp fields for this cluster.
-private val PILL_BACKGROUND_COLOR = Color.parseColor("#F0F0F0")
+// cornerRadiusDp/paddingDp fields for this cluster. The pill background color comes from
+// R.color.paypal_saved_payment_method_pill_background_color so it reacts to the system light/dark theme.
 private const val PILL_CORNER_RADIUS_DP = 999f
 private const val PILL_PADDING_DP = 4f
+private const val SHIMMER_MAX_ALPHA = 1f
+private const val SHIMMER_MIN_ALPHA = 0.4f
+private const val SHIMMER_DURATION_MS = 600L
 
 /**
  * The funding-instrument pill: card-art icon, masked FI text (or fallback email), and an edit
@@ -40,11 +37,8 @@ private const val PILL_PADDING_DP = 4f
  * consumes [PayPalSavedPaymentMethodStyleResolver] directly rather than the raw nullable style
  * contract.
  *
- * This view owns one piece of async work itself: loading the funding instrument's image into
- * [iconView], since whether that succeeds is a rendering-layer concern local to this view, not
- * something the FI fetch can know in advance. That load is cancelled on detach and not restarted
- * until the next [setState] call, so a recycled/re-attached instance never resolves into a stale
- * render.
+ * TODO: this renders a fallback glyph for the funding-instrument icon; loading the real
+ * card-art image (via [SimpleBitmapLoader] or otherwise) is being provided separately.
  */
 internal class FiSection @JvmOverloads constructor(
     context: Context,
@@ -59,26 +53,26 @@ internal class FiSection @JvmOverloads constructor(
     private val pillBackground = GradientDrawable()
 
     private var onEditClickListener: (() -> Unit)? = null
-    private var imageLoadJob: Job? = null
-    private var viewScope: CoroutineScope? = null
     private var shimmerAnimator: ValueAnimator? = null
 
     init {
         orientation = HORIZONTAL
         LayoutInflater.from(context).inflate(R.layout.fi_section, this, true)
 
-        iconView = findViewById(R.id.psp_fi_icon)
-        textView = findViewById(R.id.psp_fi_text)
-        editIconView = findViewById(R.id.psp_fi_edit_icon)
-        shimmerView = findViewById(R.id.psp_fi_shimmer)
+        iconView = findViewById(R.id.paypal_saved_payment_method_fi_icon)
+        textView = findViewById(R.id.paypal_saved_payment_method_fi_text)
+        editIconView = findViewById(R.id.paypal_saved_payment_method_fi_edit_icon)
+        shimmerView = findViewById(R.id.paypal_saved_payment_method_fi_shimmer)
 
         background = pillBackground
         editIconView.setOnClickListener { onEditClickListener?.invoke() }
 
         pillBackground.shape = GradientDrawable.RECTANGLE
-        pillBackground.setColor(PILL_BACKGROUND_COLOR)
-        pillBackground.cornerRadius = PILL_CORNER_RADIUS_DP.dpToPx()
-        val padding = PILL_PADDING_DP.dpToPx().toInt()
+        pillBackground.setColor(
+            ContextCompat.getColor(context, R.color.paypal_saved_payment_method_pill_background_color)
+        )
+        pillBackground.cornerRadius = PILL_CORNER_RADIUS_DP.dpToPx(resources)
+        val padding = PILL_PADDING_DP.dpToPx(resources).toInt()
         setPadding(padding, padding, padding, padding)
 
         renderLoading()
@@ -94,7 +88,7 @@ internal class FiSection @JvmOverloads constructor(
                 ?.let { textView.typeface = it }
         }
 
-        val editIconSize = resolvedStyle.editIconSizeDp.dpToPx().toInt()
+        val editIconSize = resolvedStyle.editIconSizeDp.dpToPx(resources).toInt()
         editIconView.layoutParams = editIconView.layoutParams.apply {
             width = editIconSize
             height = editIconSize
@@ -112,7 +106,6 @@ internal class FiSection @JvmOverloads constructor(
      * this view never triggers that fetch itself.
      */
     fun setState(state: FiClusterState) {
-        imageLoadJob?.cancel()
         iconView.setImageDrawable(null)
 
         when (state) {
@@ -128,9 +121,6 @@ internal class FiSection @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        viewScope?.cancel()
-        viewScope = null
-        imageLoadJob = null
         stopShimmer()
     }
 
@@ -159,17 +149,6 @@ internal class FiSection @JvmOverloads constructor(
             method.lastDigits.orEmpty()
         )
         iconView.setImageResource(fallbackIconRes(method.type))
-
-        val scope = viewScope ?: CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-            .also { viewScope = it }
-        imageLoadJob = scope.launch {
-            val bitmap = SimpleBitmapLoader.load(method.imageUrl)
-            if (bitmap != null) {
-                iconView.setImageBitmap(bitmap)
-            }
-            // null -> leave the fallback glyph already set above; this is the
-            // "FI available, image failed" render outcome, not a distinct state.
-        }
     }
 
     private fun renderNoFiLoad(state: FiClusterState.NoFiLoad) {
@@ -184,8 +163,8 @@ internal class FiSection @JvmOverloads constructor(
 
     private fun startShimmer() {
         if (shimmerAnimator != null) return
-        shimmerAnimator = ObjectAnimator.ofFloat(shimmerView, "alpha", 1f, 0.4f).apply {
-            duration = 600
+        shimmerAnimator = ObjectAnimator.ofFloat(shimmerView, "alpha", SHIMMER_MAX_ALPHA, SHIMMER_MIN_ALPHA).apply {
+            duration = SHIMMER_DURATION_MS
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             start()
@@ -203,7 +182,4 @@ internal class FiSection @JvmOverloads constructor(
     } else {
         R.drawable.ic_fi_card_placeholder
     }
-
-    private fun Float.dpToPx(): Float =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this, resources.displayMetrics)
 }

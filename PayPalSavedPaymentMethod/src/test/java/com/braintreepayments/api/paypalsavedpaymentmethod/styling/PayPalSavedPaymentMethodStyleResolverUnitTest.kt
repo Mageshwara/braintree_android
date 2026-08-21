@@ -1,20 +1,24 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod.styling
 
+import android.content.Context
 import android.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class PayPalSavedPaymentMethodStyleResolverUnitTest {
 
+    private val context: Context = RuntimeEnvironment.getApplication()
+
     @Test
     fun `fully null style resolves to all SDK defaults`() {
-        val resolved = PayPalSavedPaymentMethodStyleResolver(PayPalSavedPaymentMethodViewStyle())
+        val resolved = PayPalSavedPaymentMethodStyleResolver(context, PayPalSavedPaymentMethodViewStyle())
 
-        assertEquals(true, resolved.showLogo)
+        assertEquals(true, resolved.showPayPalLogo)
         assertEquals(true, resolved.showLabel)
         assertEquals(true, resolved.showCreditMessaging)
 
@@ -59,9 +63,9 @@ class PayPalSavedPaymentMethodStyleResolverUnitTest {
             )
         )
 
-        val resolved = PayPalSavedPaymentMethodStyleResolver(style)
+        val resolved = PayPalSavedPaymentMethodStyleResolver(context, style)
 
-        assertEquals(false, resolved.showLogo)
+        assertEquals(false, resolved.showPayPalLogo)
         assertEquals(Color.BLUE, resolved.backgroundColor)
         assertEquals(Color.RED, resolved.textColor)
         assertEquals(5f, resolved.horizontalPaddingDp)
@@ -87,7 +91,7 @@ class PayPalSavedPaymentMethodStyleResolverUnitTest {
             )
         )
 
-        val resolved = PayPalSavedPaymentMethodStyleResolver(style)
+        val resolved = PayPalSavedPaymentMethodStyleResolver(context, style)
 
         assertEquals(15f, resolved.labelFontSizeSp)
         assertEquals(22f, resolved.fundingInstrumentTextFontSizeSp)
@@ -100,6 +104,7 @@ class PayPalSavedPaymentMethodStyleResolverUnitTest {
     @Test
     fun `no baseFontSizeSp and no explicit value falls back to SDK per-element default`() {
         val resolved = PayPalSavedPaymentMethodStyleResolver(
+            context,
             PayPalSavedPaymentMethodViewStyle(componentAppearance = ComponentAppearance())
         )
 

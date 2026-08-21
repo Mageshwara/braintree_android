@@ -22,6 +22,7 @@
     <string name="saved_payment_method_button">Saved Payment Method (Edit FI)</string>
     <string name="saved_payment_method_kotlin_style_label">Kotlin setStyle() path</string>
     <string name="saved_payment_method_xml_style_label">XML attrs style path</string>
+    <string name="saved_payment_method_default_style_label">SDK defaults (no overrides — reacts to system theme)</string>
     <string name="saved_payment_method_refresh_button">Refresh (re-initialize)</string>
     <string name="shopper_insights_button">Payment Ready V1</string>
     <string name="shopper_insights_v2_button">Payment Ready V2</string>

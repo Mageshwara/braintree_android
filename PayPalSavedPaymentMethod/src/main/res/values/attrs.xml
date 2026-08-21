@@ -9,9 +9,9 @@
       programmatic setStyle() call fully replaces it, attrs included.
     -->
     <declare-styleable name="PayPalSavedPaymentMethodView">
-        <attr name="showLogo" format="boolean" />
-        <attr name="showLabel" format="boolean" />
-        <attr name="showCreditMessaging" format="boolean" />
+        <attr name="showPayPalLogo" format="boolean" />
+        <attr name="showPayPalLabel" format="boolean" />
+        <attr name="showPayPalCreditMessaging" format="boolean" />
 
         <attr name="componentBackgroundColor" format="color" />
         <attr name="componentTextColor" format="color" />
@@ -25,10 +25,10 @@
         <attr name="containerBorderColor" format="color" />
         <attr name="containerBorderWidthDp" format="dimension" />
 
-        <attr name="logoWidthDp" format="dimension" />
+        <attr name="payPalLogoWidthDp" format="dimension" />
 
-        <attr name="labelFontSizeSp" format="dimension" />
-        <attr name="labelMarginStartDp" format="dimension" />
+        <attr name="payPalLabelFontSizeSp" format="dimension" />
+        <attr name="payPalLabelMarginStartDp" format="dimension" />
 
         <attr name="fundingInstrumentTextFontSizeSp" format="dimension" />
         <attr name="fundingInstrumentEditIconSizeDp" format="dimension" />
