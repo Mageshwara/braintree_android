@@ -24,6 +24,7 @@ import org.json.JSONObject
  * GraphQL calls directly against [BraintreeClient], and starts the edit-FI PayPal payment auth flow
  * via [PayPalClient].
  */
+@Suppress("TooManyFunctions")
 internal class PayPalSavedPaymentMethodClient(
     private val braintreeClient: BraintreeClient,
     private val payPalClient: PayPalClient,
@@ -78,25 +79,29 @@ internal class PayPalSavedPaymentMethodClient(
     ) = payPalClient.createPaymentAuthRequestForEditFi(context, payPalRequest, callback)
 
     /**
-     * Tokenizes the result of the edit-FI PayPal payment auth flow, after the app returns from
-     * the browser switch.
+     * After receiving a result from the PayPal web authentication flow via
+     * [PayPalLauncher.handleReturnToApp], pass the resulting [PayPalPaymentAuthResult.Success]
+     * to this method to tokenize the PayPal account and complete the edit-FI flow.
      *
-     * @param paymentAuthResult a successful [PayPalPaymentAuthResult.Success] from
-     * `PayPalLauncher.handleReturnToApp`.
-     * @param callback          [PayPalTokenizeCallback]
+     * Callback-based variant: the result is delivered asynchronously to [callback]. Use the
+     * `suspend` [tokenize] overload when calling from a coroutine.
+     *
+     * @param paymentAuthResult [PayPalPaymentAuthResult.Success]
+     * @param callback [PayPalTokenizeCallback] invoked with the result
      */
     @ExperimentalBetaApi
-    fun tokenize(
-        paymentAuthResult: PayPalPaymentAuthResult.Success,
-        callback: PayPalTokenizeCallback
-    ) = payPalClient.tokenize(paymentAuthResult, callback)
+    fun tokenize(paymentAuthResult: PayPalPaymentAuthResult.Success, callback: PayPalTokenizeCallback) =
+        payPalClient.tokenize(paymentAuthResult, callback)
 
     /**
-     * `suspend` variant of [tokenize] - call from a coroutine to receive the result directly as
-     * the return value.
+     * After receiving a result from the PayPal web authentication flow via
+     * [PayPalLauncher.handleReturnToApp], pass the resulting [PayPalPaymentAuthResult.Success]
+     * to this method to tokenize the PayPal account and complete the edit-FI flow.
      *
-     * @param paymentAuthResult a successful [PayPalPaymentAuthResult.Success] from
-     * `PayPalLauncher.handleReturnToApp`.
+     * `suspend` variant: call from a coroutine to receive the result directly as the return value.
+     * Use the [tokenize] overload that takes a [PayPalTokenizeCallback] outside a coroutine.
+     *
+     * @param paymentAuthResult [PayPalPaymentAuthResult.Success]
      * @return [PayPalResult]
      */
     @ExperimentalBetaApi
