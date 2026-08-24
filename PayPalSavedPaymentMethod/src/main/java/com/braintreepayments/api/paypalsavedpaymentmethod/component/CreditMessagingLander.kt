@@ -31,10 +31,7 @@ internal class CreditMessagingLander(context: Context) :
         setContentView(R.layout.credit_messaging_lander)
         webView = findViewById(R.id.paypal_saved_payment_method_lander_webview)
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                view.loadUrl(request.url.toString())
-                return true
-            }
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = false
         }
         findViewById<ImageView>(R.id.paypal_saved_payment_method_lander_close).also { closeButton ->
             closeButton.setOnClickListener { dismiss() }

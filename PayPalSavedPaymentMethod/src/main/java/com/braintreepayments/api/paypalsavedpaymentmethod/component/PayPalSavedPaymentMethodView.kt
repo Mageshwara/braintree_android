@@ -1,6 +1,5 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod.component
 
-import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -74,7 +73,6 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
 
     /** Constructed in [initialize], mirrors `PayPalButton`'s [PayPalLauncher] ownership. */
     private lateinit var payPalLauncher: PayPalLauncher
-    private var pendingRequestString: String? = null
 
     private var callback: PayPalSavedPaymentMethodLaunchCallback? = null
 
@@ -131,12 +129,15 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         applyStyle(style)
     }
 
-    /** Handles the return from the PayPal auth flow browser switch. Call from `onResume`/`onNewIntent`. */
+    /**
+     * Handles the return from the PayPal auth flow browser switch. Call from `onResume`/`onNewIntent`.
+     *
+     * @param pendingRequest the [PayPalPendingRequest.Started] delivered to
+     * [PayPalSavedPaymentMethodLaunchCallback.onSavedPaymentMethodLaunch]. The merchant is responsible
+     * for storing this across a process death and passing it back in here, matching `PayPalButton`.
+     */
     @OptIn(ExperimentalBetaApi::class)
-    fun handleReturnToApp(intent: Intent) {
-        val pendingRequest = pendingRequestString?.let { PayPalPendingRequest.Started(it) } ?: return
-        pendingRequestString = null
-
+    fun handleReturnToApp(pendingRequest: PayPalPendingRequest.Started, intent: Intent) {
         val authResult = payPalLauncher.handleReturnToApp(pendingRequest, intent)
         when (authResult) {
             is PayPalPaymentAuthResult.Success ->
@@ -213,9 +214,14 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
     /** Edit pencil tap -> auth request -> browser/app switch. Outcome arrives via [handleReturnToApp]. */
     @OptIn(ExperimentalBetaApi::class)
     private fun startEditFlow() {
-        val request = payPalRequest ?: return
-        val activity = findActivity() as? ComponentActivity ?: return
-
+        val request = payPalRequest
+            ?: throw NullPointerException("PayPalSavedPaymentMethodView must be initialized first")
+        val activity = findActivity() ?: run {
+            callback?.onSavedPaymentMethodResult(
+                PayPalResult.Failure(NullPointerException("Activity is null"))
+            )
+            return
+        }
         showFullScreenLoader()
 
         payPalSavedPaymentMethodClient.createPaymentAuthRequest(context, request) { paymentAuthRequest ->
@@ -231,10 +237,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         paymentAuthRequest: PayPalPaymentAuthRequest.ReadyToLaunch
     ) {
         when (val pendingRequest = payPalLauncher.launch(activity, paymentAuthRequest)) {
-            is PayPalPendingRequest.Started -> {
-                pendingRequestString = pendingRequest.pendingRequestString
-                callback?.onSavedPaymentMethodLaunch(pendingRequest)
-            }
+            is PayPalPendingRequest.Started -> callback?.onSavedPaymentMethodLaunch(pendingRequest)
             is PayPalPendingRequest.Failure -> onAuthRequestFailure(pendingRequest.error)
         }
     }
@@ -255,11 +258,11 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         editFlowJob = scope().launch {
             hideFullScreenLoader()
             callback?.onSavedPaymentMethodResult(result)
-            val state = payPalSavedPaymentMethodClient
-                .refetchFI(orderId = result.nonce.paymentId.orEmpty())
-                .toFiClusterState()
-            lastFiClusterState = state
-            fiSection.setState(state)
+            result.nonce.paymentId?.let { orderId ->
+                val state = payPalSavedPaymentMethodClient.refetchFI(orderId = orderId).toFiClusterState()
+                lastFiClusterState = state
+                fiSection.setState(state)
+            }
         }
     }
 
@@ -302,10 +305,10 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         fullScreenLoaderOverlay = null
     }
 
-    private fun findActivity(): Activity? {
+    private fun findActivity(): ComponentActivity? {
         var current: Context = context
         while (current is ContextWrapper) {
-            if (current is Activity) return current
+            if (current is ComponentActivity) return current
             current = current.baseContext
         }
         return null

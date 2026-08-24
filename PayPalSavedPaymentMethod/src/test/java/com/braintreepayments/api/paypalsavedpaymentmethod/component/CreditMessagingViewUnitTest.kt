@@ -2,6 +2,8 @@ package com.braintreepayments.api.paypalsavedpaymentmethod.component
 
 import android.content.Context
 import android.graphics.Color
+import android.text.Spanned
+import android.text.style.ClickableSpan
 import android.view.View
 import android.widget.TextView
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
@@ -88,5 +90,36 @@ class CreditMessagingViewUnitTest {
 
         assertEquals(Color.RED, textView.currentTextColor)
         assertEquals(18f, textView.textSize / context.resources.displayMetrics.scaledDensity, 0.01f)
+    }
+
+    @Test
+    fun `tapping learn-more twice reuses the same lander instance`() {
+        val content = CreditMessagingContent(
+            message = "Pay in 4 of \$25",
+            learnMoreText = "Learn more",
+            learnMoreUrl = "https://paypal.com/pay-later"
+        )
+        view.setState(CreditMessagingState.Content(content))
+
+        val spanned = textView.text as Spanned
+        val span = spanned.getSpans(0, spanned.length, ClickableSpan::class.java).first()
+
+        span.onClick(textView)
+        val landerAfterFirstTap = getPrivateField(view, "lander\$delegate").let {
+            (it as Lazy<*>).value
+        }
+
+        span.onClick(textView)
+        val landerAfterSecondTap = getPrivateField(view, "lander\$delegate").let {
+            (it as Lazy<*>).value
+        }
+
+        assertTrue(landerAfterFirstTap === landerAfterSecondTap)
+    }
+
+    private fun getPrivateField(target: Any, name: String): Any? {
+        val field = target::class.java.getDeclaredField(name)
+        field.isAccessible = true
+        return field.get(target)
     }
 }

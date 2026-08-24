@@ -51,6 +51,7 @@ internal class CreditMessagingView @JvmOverloads constructor(
 
     private var linkColor: Int? = null
     private var shimmerAnimator: ValueAnimator? = null
+    private val lander by lazy { CreditMessagingLander(context) }
 
     init {
         LayoutInflater.from(context).inflate(R.layout.credit_messaging_view, this, true)
@@ -126,7 +127,7 @@ internal class CreditMessagingView @JvmOverloads constructor(
         val resolvedLinkColor = linkColor
         val clickableSpan = object : ClickableSpan() {
             override fun onClick(widget: View) {
-                CreditMessagingLander(context).load(content.learnMoreUrl)
+                lander.load(content.learnMoreUrl)
             }
 
             override fun updateDrawState(ds: android.text.TextPaint) {

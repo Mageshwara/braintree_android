@@ -38,7 +38,7 @@ private const val SHIMMER_DURATION_MS = 600L
  * contract.
  *
  * TODO: this renders a fallback glyph for the funding-instrument icon; loading the real
- * card-art image (via [SimpleBitmapLoader] or otherwise) is being provided separately.
+ * card-art image is being provided separately.
  */
 internal class FiSection @JvmOverloads constructor(
     context: Context,
@@ -144,10 +144,15 @@ internal class FiSection @JvmOverloads constructor(
         iconView.isVisible = true
 
         val method = state.paymentMethod
-        textView.text = resources.getString(
-            R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number,
-            method.lastDigits.orEmpty()
-        )
+        textView.text = method.lastDigits
+            ?.takeIf { it.isNotBlank() }
+            ?.let {
+                resources.getString(
+                    R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number,
+                    it
+                )
+            }
+            ?: method.label
         iconView.setImageResource(fallbackIconRes(method.type))
     }
 

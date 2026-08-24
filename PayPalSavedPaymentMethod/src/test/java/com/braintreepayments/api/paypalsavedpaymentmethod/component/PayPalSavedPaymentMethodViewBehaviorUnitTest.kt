@@ -80,19 +80,11 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
     // -- handleReturnToApp branch dispatch --
 
     @Test
-    fun `handleReturnToApp with no pending request does nothing`() {
-        view.handleReturnToApp(Intent())
-
-        assertNull(fakeCallback.lastResult)
-    }
-
-    @Test
     fun `handleReturnToApp NoResult reports Cancel and restores the last FI state`() {
-        setPrivateField(view, "pendingRequestString", "pending-string")
         setPrivateField(view, "lastFiClusterState", FiClusterState.NoNetworkLoad)
         every { launcher.handleReturnToApp(any(), any()) } returns PayPalPaymentAuthResult.NoResult
 
-        view.handleReturnToApp(Intent())
+        view.handleReturnToApp(PayPalPendingRequest.Started("pending-string"), Intent())
 
         assertEquals(PayPalResult.Cancel, fakeCallback.lastResult)
         assertTrue(fiSection.visibility != android.view.View.VISIBLE)
@@ -100,13 +92,12 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
 
     @Test
     fun `handleReturnToApp Failure reports the same error`() {
-        setPrivateField(view, "pendingRequestString", "pending-string")
         val error = Exception("browser switch failed")
         val failureResult = mockk<PayPalPaymentAuthResult.Failure>()
         every { failureResult.error } returns error
         every { launcher.handleReturnToApp(any(), any()) } returns failureResult
 
-        view.handleReturnToApp(Intent())
+        view.handleReturnToApp(PayPalPendingRequest.Started("pending-string"), Intent())
 
         val result = fakeCallback.lastResult as? PayPalResult.Failure
         assertEquals(error, result?.error)
@@ -114,19 +105,17 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
 
     @Test
     fun `handleReturnToApp Success delegates to the client's tokenize call`() {
-        setPrivateField(view, "pendingRequestString", "pending-string")
         val successResult = mockk<PayPalPaymentAuthResult.Success>()
         every { launcher.handleReturnToApp(any(), any()) } returns successResult
         every { client.tokenize(any(), any()) } just Runs
 
-        view.handleReturnToApp(Intent())
+        view.handleReturnToApp(PayPalPendingRequest.Started("pending-string"), Intent())
 
         verify { client.tokenize(successResult, any()) }
     }
 
     @Test
     fun `Success tokenize result refetches FI keyed by the order id and reports success`() {
-        setPrivateField(view, "pendingRequestString", "pending-string")
         val successAuthResult = mockk<PayPalPaymentAuthResult.Success>()
         every { launcher.handleReturnToApp(any(), any()) } returns successAuthResult
 
@@ -144,7 +133,7 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
         coEvery { client.refetchFI(orderId = "order-123") } returns
             PayPalSavedPaymentMethodSummaryResult.Success(summary)
 
-        view.handleReturnToApp(Intent())
+        view.handleReturnToApp(PayPalPendingRequest.Started("pending-string"), Intent())
 
         assertTrue(fakeCallback.lastResult is PayPalResult.Success)
         assertEquals("••4242", fiSection.findViewById<android.widget.TextView>(

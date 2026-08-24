@@ -58,6 +58,24 @@ class FiSectionUnitTest {
     }
 
     @Test
+    fun `Available state falls back to label when lastDigits is null`() {
+        val method = paymentMethod(lastDigits = null)
+
+        fiSection.setState(FiClusterState.Available(method))
+
+        assertEquals("label", textView.text.toString())
+    }
+
+    @Test
+    fun `Available state falls back to label when lastDigits is blank`() {
+        val method = paymentMethod(lastDigits = "   ")
+
+        fiSection.setState(FiClusterState.Available(method))
+
+        assertEquals("label", textView.text.toString())
+    }
+
+    @Test
     fun `NoFiLoad state renders the email instead of FI text and still shows edit pencil`() {
         fiSection.setState(FiClusterState.NoFiLoad(email = "buyer@example.com"))
 
@@ -89,7 +107,7 @@ class FiSectionUnitTest {
 
     private fun android.view.View.isVisible() = this.visibility == android.view.View.VISIBLE
 
-    private fun paymentMethod(lastDigits: String) = PayPalSavedPaymentMethod(
+    private fun paymentMethod(lastDigits: String?) = PayPalSavedPaymentMethod(
         label = "label",
         imageUrl = "https://example.com/icon.png",
         lastDigits = lastDigits,

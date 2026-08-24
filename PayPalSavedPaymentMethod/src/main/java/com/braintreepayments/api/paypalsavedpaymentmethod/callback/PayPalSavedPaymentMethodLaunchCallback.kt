@@ -14,14 +14,6 @@ import com.braintreepayments.api.paypal.PayPalResult
  * [PayPalPendingRequest.Started.pendingRequestString] from [onSavedPaymentMethodLaunch] and resume
  * it via `PayPalSavedPaymentMethodView.handleReturnToApp`, whose outcome is then delivered to
  * [onSavedPaymentMethodResult].
- *
- * // TODO: Phase 2 -- in this Phase 1 build, [onSavedPaymentMethodLaunch] fires with a stub
- * [PayPalPendingRequest.Started] value at edit-tap time, not a real launch result from
- * `PayPalLauncher.launch`, and [onSavedPaymentMethodResult] never delivers
- * [PayPalResult.Success] since fabricating a real `PayPalAccountNonce` requires Phase 2's real
- * tokenize call. The signatures and merchant-facing contract are real; the values behind them are
- * not until Phase 2 wires the actual `create_payment_resource` + app-switch/browser launch +
- * tokenize.
  */
 interface PayPalSavedPaymentMethodLaunchCallback {
 
