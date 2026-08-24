@@ -14,7 +14,7 @@ import org.json.JSONObject
  * @property subtype    Raw backend subtype, present for "PAYPAL_CREDIT" (e.g. "PAY_LATER_US").
  */
 @ExperimentalBetaApi
-data class PayPalSavedpaymentMethod internal constructor(
+data class PayPalSavedPaymentMethod internal constructor(
     val label: String,
     val imageUrl: String,
     val lastDigits: String?,
@@ -26,12 +26,13 @@ data class PayPalSavedpaymentMethod internal constructor(
  * The payer returned for a display-only (email-only) response.
  *
  * @property email    Payer email.
- * @property editable Whether the funding instrument is editable.
+ * @property editable Whether the funding instrument is editable, or null if the backend didn't
+ * include the field.
  */
 @ExperimentalBetaApi
 data class Payer internal constructor(
     val email: String,
-    val editable: Boolean,
+    val editable: Boolean?,
 )
 
 /**
@@ -49,14 +50,14 @@ data class Payer internal constructor(
 @ExperimentalBetaApi
 data class PayPalSavedPaymentMethodSummary internal constructor(
     val paypalPayer: Payer?,
-    val paypalSavedPaymentMethods: List<PayPalSavedpaymentMethod>,
+    val paypalSavedPaymentMethods: List<PayPalSavedPaymentMethod>,
 ) {
 
     /**
      * The primary funding instrument (the first in [paypalSavedPaymentMethods]), or null for a
      * display-only / No-FI response.
      */
-    val primaryInstrument: PayPalSavedpaymentMethod?
+    val primaryInstrument: PayPalSavedPaymentMethod?
         get() = paypalSavedPaymentMethods.firstOrNull()
 
     internal companion object {
@@ -81,14 +82,14 @@ data class PayPalSavedPaymentMethodSummary internal constructor(
             val payer = payload?.optJSONObject(PAYER_KEY)?.let { payerJson ->
                 Payer(
                     email = Json.optString(payerJson, EMAIL_KEY, ""),
-                    editable = payerJson.optBoolean(IS_EDITABLE_KEY, false),
+                    editable = payerJson.opt(IS_EDITABLE_KEY) as? Boolean,
                 )
             }
 
             val instruments = payload?.optJSONArray(PAYMENT_METHODS_KEY)?.let { array ->
                 (0 until array.length()).map { index ->
                     val instrumentJson = array.getJSONObject(index)
-                    PayPalSavedpaymentMethod(
+                    PayPalSavedPaymentMethod(
                         label = Json.optString(instrumentJson, LABEL_KEY, ""),
                         imageUrl = Json.optString(instrumentJson, IMAGE_URL_KEY, ""),
                         lastDigits = Json.optString(instrumentJson, LAST_DIGITS_KEY, null),
