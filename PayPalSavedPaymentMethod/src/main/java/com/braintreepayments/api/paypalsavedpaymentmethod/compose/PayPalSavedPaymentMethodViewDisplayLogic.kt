@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import com.braintreepayments.api.core.ExperimentalBetaApi
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingContent
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 
 /**
@@ -14,16 +16,16 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.R
 /**
  * Whether the credit-messaging row should render - hidden entirely when the FI row itself is
  * hidden (No-network / Error) or merchant styling opts out, otherwise shown either as a shimmer
- * (while loading) or once both a message and a "Learn more" label have resolved.
+ * (while loading) or once [creditMessagingContent] has resolved.
  */
+@OptIn(ExperimentalBetaApi::class)
 internal fun shouldShowCreditMessaging(
     hideFiRow: Boolean,
     showPayPalCreditMessaging: Boolean,
     isCreditMessageLoading: Boolean,
-    creditMessage: String?,
-    creditMessageLinkLabel: String?
+    creditMessagingContent: PayPalCreditMessagingContent?
 ): Boolean = !hideFiRow && showPayPalCreditMessaging &&
-    (isCreditMessageLoading || (creditMessage != null && creditMessageLinkLabel != null))
+    (isCreditMessageLoading || creditMessagingContent != null)
 
 /**
  * The generic FI-type icon for [type] ("CARD"/"BANK"), or null when the type has no icon (e.g.

@@ -73,7 +73,7 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingC
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingRequest
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodClient
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummaryResult
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.model.PayPalSavedPaymentMethodDisplayState
 import com.braintreepayments.api.paypalsavedpaymentmethod.model.toDisplayState
@@ -182,8 +182,7 @@ fun PayPalSavedPaymentMethodView(
             )
         },
         isCreditMessageLoading = isCreditMessageLoading,
-        creditMessage = creditMessagingContent?.message,
-        creditMessageLinkLabel = creditMessagingContent?.learnMoreText,
+        creditMessagingContent = creditMessagingContent,
         onCreditMessageLinkClick = {
             creditMessagingContent?.learnMoreUrl?.let { url -> context.launchCreditMessagingLander(url) }
         }
@@ -222,10 +221,12 @@ fun PayPalSavedPaymentMethodView(
 
                             if (tokenizeResult is PayPalResult.Success) {
                                 tokenizeResult.nonce.paymentId?.let { orderId ->
+                                    val lastKnownDisplayState = displayState
                                     displayState = PayPalSavedPaymentMethodDisplayState.Loading
                                     refetchFiAfterEdit(
                                         payPalSavedPaymentMethodClient,
-                                        orderId
+                                        orderId,
+                                        lastKnownDisplayState
                                     ) { refreshedDisplayState ->
                                         displayState = refreshedDisplayState
                                     }
@@ -332,14 +333,13 @@ private fun creditMessagingRequestFor(payPalCheckoutRequest: PayPalCheckoutReque
  * networking or business logic.
  *
  * Real card-art loading is not yet wired — the FI cluster always falls back to a generic type
- * icon regardless of [PayPalSavedpaymentMethod.imageUrl].
+ * icon regardless of [PayPalSavedPaymentMethod.imageUrl].
  *
  * @param isCreditMessageLoading true while the credit-messaging fetch is in flight; renders a
  * shimmer placeholder in place of the row.
- * @param creditMessage the compliance-provided messaging copy (e.g. "As low as $10/mo"); the
+ * @param creditMessagingContent the resolved Pay Later / Credit presentment messaging; the
  * credit-messaging row is hidden when this is null or [PayPalSavedPaymentMethodViewStyle.showPayPalCreditMessaging]
  * is false.
- * @param creditMessageLinkLabel the trailing link text (e.g. "Learn more").
  * @param onCreditMessageLinkClick invoked when the credit-messaging link is tapped.
  */
 @ExperimentalBetaApi
@@ -352,70 +352,73 @@ fun PayPalSavedPaymentMethodViewContent(
     editEnabled: Boolean = true,
     onEditClick: () -> Unit = {},
     isCreditMessageLoading: Boolean = false,
-    creditMessage: String? = null,
-    creditMessageLinkLabel: String? = null,
+    creditMessagingContent: PayPalCreditMessagingContent? = null,
     onCreditMessageLinkClick: () -> Unit = {}
 ) {
     // NoNetwork and Error both hide the FI row but keep the PayPal brand mark visible.
     val hideFiRow = displayState is PayPalSavedPaymentMethodDisplayState.Error ||
         displayState is PayPalSavedPaymentMethodDisplayState.NoNetwork
-    val resolved = PayPalSavedPaymentMethodStyleResolver(style, LocalContext.current)
-    val textColor = Color(resolved.textColor)
+    val context = LocalContext.current
+    val resolvedStyle = remember(style) { PayPalSavedPaymentMethodStyleResolver(style, context) }
+    val textColor = Color(resolvedStyle.textColor)
     val showCreditMessaging = shouldShowCreditMessaging(
         hideFiRow = hideFiRow,
-        showPayPalCreditMessaging = resolved.showCreditMessaging,
+        showPayPalCreditMessaging = resolvedStyle.showCreditMessaging,
         isCreditMessageLoading = isCreditMessageLoading,
-        creditMessage = creditMessage,
-        creditMessageLinkLabel = creditMessageLinkLabel
+        creditMessagingContent = creditMessagingContent
     )
 
     Card(
         modifier = modifier
-            .let { if (resolved.heightDp != null) it.height(resolved.heightDp.dp) else it.wrapContentHeight() },
-        shape = RoundedCornerShape(resolved.cornerRadiusDp.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(resolved.backgroundColor)),
+            .let {
+                if (resolvedStyle.heightDp != null) it.height(resolvedStyle.heightDp.dp) else it.wrapContentHeight()
+            },
+        shape = RoundedCornerShape(resolvedStyle.cornerRadiusDp.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(resolvedStyle.backgroundColor)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = if (resolved.borderWidthDp > 0f) {
-            BorderStroke(resolved.borderWidthDp.dp, Color(resolved.borderColor))
+        border = if (resolvedStyle.borderWidthDp > 0f) {
+            BorderStroke(resolvedStyle.borderWidthDp.dp, Color(resolvedStyle.borderColor))
         } else {
             null
         }
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = resolved.horizontalPaddingDp.dp, vertical = resolved.verticalPaddingDp.dp),
+                .padding(
+                    horizontal = resolvedStyle.horizontalPaddingDp.dp,
+                    vertical = resolvedStyle.verticalPaddingDp.dp
+                ),
             verticalAlignment = Alignment.Top
         ) {
-            if (resolved.showLogo) {
+            if (resolvedStyle.showLogo) {
                 Image(
                     painter = painterResource(R.drawable.ic_paypal_brand_logo),
                     contentDescription = stringResource(R.string.paypal_saved_payment_method_label),
-                    modifier = Modifier.width(resolved.logoWidthDp.dp)
+                    modifier = Modifier.width(resolvedStyle.logoWidthDp.dp)
                 )
             }
 
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (resolved.showLabel) {
+                    if (resolvedStyle.showLabel) {
                         Text(
                             text = stringResource(R.string.paypal_saved_payment_method_label),
                             color = textColor,
-                            fontSize = resolved.labelFontSizeSp.sp,
-                            lineHeight = spDimensionResource(R.dimen.paypal_saved_payment_method_label_line_height),
+                            fontSize = resolvedStyle.labelFontSizeSp.sp,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = resolved.fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default,
-                            modifier = Modifier.padding(start = resolved.labelMarginStartDp.dp)
+                            fontFamily = resolvedStyle.fontFamily,
+                            modifier = Modifier.padding(start = resolvedStyle.labelMarginStartDp.dp)
                         )
                     }
 
                     if (!hideFiRow) {
                         FiCluster(
                             displayState = displayState,
-                            resolved = resolved,
+                            resolvedStyle = resolvedStyle,
                             editContentDescription = editContentDescription,
                             editEnabled = editEnabled,
                             onEditClick = onEditClick,
-                            modifier = Modifier.padding(start = resolved.fundingInstrumentMarginStartDp.dp)
+                            modifier = Modifier.padding(start = resolvedStyle.fundingInstrumentMarginStartDp.dp)
                         )
                     }
                 }
@@ -423,13 +426,12 @@ fun PayPalSavedPaymentMethodViewContent(
                 if (showCreditMessaging) {
                     CreditMessagingSection(
                         isLoading = isCreditMessageLoading,
-                        message = creditMessage,
-                        linkLabel = creditMessageLinkLabel,
-                        resolved = resolved,
+                        creditMessagingContent = creditMessagingContent,
+                        resolvedStyle = resolvedStyle,
                         onLinkClick = onCreditMessageLinkClick,
                         modifier = Modifier
                             .padding(
-                                start = resolved.labelMarginStartDp.dp,
+                                start = resolvedStyle.labelMarginStartDp.dp,
                                 top = dimensionResource(
                                     R.dimen.paypal_saved_payment_method_credit_messaging_spacing
                                 ),
@@ -444,12 +446,12 @@ fun PayPalSavedPaymentMethodViewContent(
     }
 }
 
+@OptIn(ExperimentalBetaApi::class)
 @Composable
 private fun CreditMessagingSection(
     isLoading: Boolean,
-    message: String?,
-    linkLabel: String?,
-    resolved: PayPalSavedPaymentMethodStyleResolver,
+    creditMessagingContent: PayPalCreditMessagingContent?,
+    resolvedStyle: PayPalSavedPaymentMethodStyleResolver,
     onLinkClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -457,9 +459,9 @@ private fun CreditMessagingSection(
         CreditMessagingPlaceholder(modifier = modifier)
     } else {
         CreditMessagingRow(
-            message = message.orEmpty(),
-            linkLabel = linkLabel.orEmpty(),
-            resolved = resolved,
+            message = creditMessagingContent?.message.orEmpty(),
+            linkLabel = creditMessagingContent?.learnMoreText.orEmpty(),
+            resolvedStyle = resolvedStyle,
             onLinkClick = onLinkClick,
             modifier = modifier
         )
@@ -470,12 +472,12 @@ private fun CreditMessagingSection(
 private fun CreditMessagingRow(
     message: String,
     linkLabel: String,
-    resolved: PayPalSavedPaymentMethodStyleResolver,
+    resolvedStyle: PayPalSavedPaymentMethodStyleResolver,
     onLinkClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val baseColor = Color(resolved.textColor)
-    val linkColor = resolved.creditMessagingLinkColor?.let { Color(it) } ?: baseColor
+    val baseColor = Color(resolvedStyle.textColor)
+    val linkColor = resolvedStyle.creditMessagingLinkColor?.let { Color(it) } ?: baseColor
 
     Text(
         text = buildAnnotatedString {
@@ -497,8 +499,9 @@ private fun CreditMessagingRow(
                 append(linkLabel)
             }
         },
-        fontSize = resolved.creditMessagingFontSizeSp.sp,
+        fontSize = resolvedStyle.creditMessagingFontSizeSp.sp,
         lineHeight = spDimensionResource(R.dimen.paypal_saved_payment_method_credit_messaging_line_height),
+        fontFamily = resolvedStyle.fontFamily,
         modifier = modifier
     )
 }
@@ -509,13 +512,13 @@ private const val LEARN_MORE_LINK_TAG = "paypal_saved_payment_method_learn_more_
 @Composable
 private fun FiCluster(
     displayState: PayPalSavedPaymentMethodDisplayState,
-    resolved: PayPalSavedPaymentMethodStyleResolver,
+    resolvedStyle: PayPalSavedPaymentMethodStyleResolver,
     editContentDescription: String?,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
     editEnabled: Boolean = true
 ) {
-    val textColor = Color(resolved.textColor)
+    val textColor = Color(resolvedStyle.textColor)
     val isLoading = displayState is PayPalSavedPaymentMethodDisplayState.Loading
     val iconMargin = dimensionResource(R.dimen.paypal_saved_payment_method_funding_instrument_icon_margin)
     val chipBackground = colorResource(R.color.paypal_saved_payment_method_funding_instrument_chip_background)
@@ -557,7 +560,8 @@ private fun FiCluster(
                 Text(
                     text = fiClusterText(displayState),
                     color = textColor,
-                    fontSize = resolved.fundingInstrumentTextFontSizeSp.sp,
+                    fontSize = resolvedStyle.fundingInstrumentTextFontSizeSp.sp,
+                    fontFamily = resolvedStyle.fontFamily,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -566,7 +570,8 @@ private fun FiCluster(
                 Text(
                     text = displayState.buyerEmail,
                     color = textColor,
-                    fontSize = resolved.fundingInstrumentTextFontSizeSp.sp,
+                    fontSize = resolvedStyle.fundingInstrumentTextFontSizeSp.sp,
+                    fontFamily = resolvedStyle.fontFamily,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -581,7 +586,7 @@ private fun FiCluster(
                 contentDescription = editContentDescription,
                 modifier = Modifier
                     .padding(start = iconMargin)
-                    .size(resolved.editIconSizeDp.dp)
+                    .size(resolvedStyle.editIconSizeDp.dp)
                     .clickable(enabled = editEnabled, onClick = onEditClick)
             )
         }
@@ -615,11 +620,17 @@ private fun CreditMessagingPlaceholder(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalBetaApi::class)
 @Composable
 private fun fiClusterText(content: PayPalSavedPaymentMethodDisplayState.Content): String {
-    val masked = content.paymentMethod.lastDigits?.let {
-        stringResource(R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number, it)
+    val lastDigits = content.paymentMethod.lastDigits
+    val masked = if (lastDigits.isNullOrBlank()) {
+        null
+    } else {
+        stringResource(R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number, lastDigits)
     }
     return masked ?: content.paymentMethod.label
 }
+
+private val PayPalSavedPaymentMethodStyleResolver.fontFamily: FontFamily
+    get() = fontResId?.let { FontFamily(Font(it)) } ?: FontFamily.Default
 
 @Composable
 private fun spDimensionResource(@DimenRes id: Int): TextUnit {
@@ -634,7 +645,7 @@ private fun spDimensionResource(@DimenRes id: Int): TextUnit {
 private fun PreviewPayPalSavedPaymentMethodViewContent() {
     PayPalSavedPaymentMethodViewContent(
         displayState = PayPalSavedPaymentMethodDisplayState.Content(
-            paymentMethod = PayPalSavedpaymentMethod(
+            paymentMethod = PayPalSavedPaymentMethod(
                 label = "",
                 imageUrl = "",
                 lastDigits = "3339",
@@ -681,7 +692,7 @@ private fun PreviewPayPalSavedPaymentMethodViewNoNetwork() {
 private fun PreviewPayPalSavedPaymentMethodViewCreditMessaging() {
     PayPalSavedPaymentMethodViewContent(
         displayState = PayPalSavedPaymentMethodDisplayState.Content(
-            paymentMethod = PayPalSavedpaymentMethod(
+            paymentMethod = PayPalSavedPaymentMethod(
                 label = "",
                 imageUrl = "",
                 lastDigits = "3339",
@@ -689,7 +700,10 @@ private fun PreviewPayPalSavedPaymentMethodViewCreditMessaging() {
                 subtype = null
             )
         ),
-        creditMessage = "Or 4 interest-free payments of $324.50.",
-        creditMessageLinkLabel = "Learn more"
+        creditMessagingContent = PayPalCreditMessagingContent(
+            message = "Or 4 interest-free payments of $324.50.",
+            learnMoreText = "Learn more",
+            learnMoreUrl = ""
+        )
     )
 }

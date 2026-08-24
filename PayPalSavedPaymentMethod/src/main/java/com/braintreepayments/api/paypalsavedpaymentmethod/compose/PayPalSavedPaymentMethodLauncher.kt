@@ -86,6 +86,7 @@ internal fun startEditFiFlow(
                                 }
 
                                 is PayPalPendingRequest.Failure -> {
+                                    onEditEnabledChanged(true)
                                     paypalTokenizeCallback.onPayPalResult(
                                         PayPalResult.Failure(payPalPendingRequest.error)
                                     )
@@ -142,19 +143,24 @@ internal suspend fun handleEditFiReturn(
 
 /**
  * Refreshes the vaulted FI after a successful edit-FI tokenize. Best-effort - a failure here
- * doesn't affect the tokenize result already delivered by [handleEditFiReturn]; the last-known FI
- * label is kept on screen.
+ * doesn't affect the tokenize result already delivered by [handleEditFiReturn]; [onFiRefreshed]
+ * is always invoked, falling back to [lastKnownDisplayState] on failure so the caller never gets
+ * stuck on the Loading state set right before this call.
  */
 @OptIn(ExperimentalBetaApi::class)
 internal suspend fun refetchFiAfterEdit(
     payPalSavedPaymentMethodClient: PayPalSavedPaymentMethodClient,
     orderId: String,
+    lastKnownDisplayState: PayPalSavedPaymentMethodDisplayState,
     onFiRefreshed: (PayPalSavedPaymentMethodDisplayState) -> Unit
 ) {
     val refreshResult = payPalSavedPaymentMethodClient.refetchFI(orderId)
-    if (refreshResult is PayPalSavedPaymentMethodSummaryResult.Success) {
-        onFiRefreshed(refreshResult.paymentMethodSummary.toDisplayState())
+    val refreshedDisplayState = if (refreshResult is PayPalSavedPaymentMethodSummaryResult.Success) {
+        refreshResult.paymentMethodSummary.toDisplayState()
+    } else {
+        lastKnownDisplayState
     }
+    onFiRefreshed(refreshedDisplayState)
 }
 
 private const val ACTIVITY_IS_NULL_MESSAGE = "Activity is null"

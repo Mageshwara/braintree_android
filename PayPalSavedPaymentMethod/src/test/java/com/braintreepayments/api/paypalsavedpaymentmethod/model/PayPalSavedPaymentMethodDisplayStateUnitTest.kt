@@ -3,7 +3,7 @@ package com.braintreepayments.api.paypalsavedpaymentmethod.model
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypalsavedpaymentmethod.Payer
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummary
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -13,7 +13,7 @@ class PayPalSavedPaymentMethodDisplayStateUnitTest {
 
     @Test
     fun toDisplayState_whenInstrumentPresent_returnsContent() {
-        val instrument = PayPalSavedpaymentMethod(
+        val instrument = PayPalSavedPaymentMethod(
             label = "CREDIT UNION 1",
             imageUrl = "https://x/generic_bank.png",
             lastDigits = "3357",

@@ -2,12 +2,12 @@ package com.braintreepayments.api.paypalsavedpaymentmethod.model
 
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummary
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 
 @ExperimentalBetaApi
 sealed interface PayPalSavedPaymentMethodDisplayState {
     data object Loading : PayPalSavedPaymentMethodDisplayState
-    data class Content(val paymentMethod: PayPalSavedpaymentMethod) : PayPalSavedPaymentMethodDisplayState
+    data class Content(val paymentMethod: PayPalSavedPaymentMethod) : PayPalSavedPaymentMethodDisplayState
     data class NoFi(val buyerEmail: String) : PayPalSavedPaymentMethodDisplayState
 
     /**
