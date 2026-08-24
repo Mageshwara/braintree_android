@@ -2,10 +2,11 @@ package com.braintreepayments.api.paypalsavedpaymentmethod.component
 
 import android.content.Context
 import android.view.ContextThemeWrapper
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import com.braintreepayments.api.core.ExperimentalBetaApi
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
 import org.junit.Assert.assertEquals
@@ -29,7 +30,7 @@ class FiSectionUnitTest {
     private val iconView get() = fiSection.findViewById<ImageView>(R.id.paypal_saved_payment_method_fi_icon)
     private val textView get() = fiSection.findViewById<TextView>(R.id.paypal_saved_payment_method_fi_text)
     private val editIconView get() = fiSection.findViewById<ImageView>(R.id.paypal_saved_payment_method_fi_edit_icon)
-    private val shimmerView get() = fiSection.findViewById<android.view.View>(R.id.paypal_saved_payment_method_fi_shimmer)
+    private val shimmerView get() = fiSection.findViewById<View>(R.id.paypal_saved_payment_method_fi_shimmer)
 
     @Test
     fun `Loading state shows shimmer and hides content`() {
@@ -88,7 +89,7 @@ class FiSectionUnitTest {
 
     private fun android.view.View.isVisible() = this.visibility == android.view.View.VISIBLE
 
-    private fun paymentMethod(lastDigits: String) = PayPalSavedpaymentMethod(
+    private fun paymentMethod(lastDigits: String) = PayPalSavedPaymentMethod(
         label = "label",
         imageUrl = "https://example.com/icon.png",
         lastDigits = lastDigits,

@@ -17,7 +17,8 @@ import com.braintreepayments.api.paypal.PayPalTokenizeCallback
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodClient
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummary
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummaryResult
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.callback.PayPalSavedPaymentMethodLaunchCallback
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
 import io.mockk.coEvery
@@ -54,11 +55,9 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
     private val launcher = mockk<PayPalLauncher>()
     private val fakeCallback = FakeLaunchCallback()
 
-    private val fiSection get() = view.findViewById<FiSection>(com.braintreepayments.api.paypalsavedpaymentmethod.R.id.paypal_saved_payment_method_fi_section)
+    private val fiSection get() = view.findViewById<FiSection>(R.id.paypal_saved_payment_method_fi_section)
     private val creditMessagingView
-        get() = view.findViewById<CreditMessagingView>(
-            com.braintreepayments.api.paypalsavedpaymentmethod.R.id.paypal_saved_payment_method_credit_messaging
-        )
+        get() = view.findViewById<CreditMessagingView>(R.id.paypal_saved_payment_method_credit_messaging)
 
     @Before
     fun setUp() {
@@ -142,7 +141,8 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
             paypalPayer = null,
             paypalSavedPaymentMethods = listOf(paymentMethod("4242"))
         )
-        coEvery { client.refetchFI(orderId = "order-123") } returns PayPalSavedPaymentMethodSummaryResult.Success(summary)
+        coEvery { client.refetchFI(orderId = "order-123") } returns
+            PayPalSavedPaymentMethodSummaryResult.Success(summary)
 
         view.handleReturnToApp(Intent())
 
@@ -157,7 +157,10 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
     @Test
     fun `fetchFI success renders the fetched funding instrument`() {
         coEvery { client.fetchFI(any()) } returns PayPalSavedPaymentMethodSummaryResult.Success(
-            PayPalSavedPaymentMethodSummary(paypalPayer = null, paypalSavedPaymentMethods = listOf(paymentMethod("9999")))
+            PayPalSavedPaymentMethodSummary(
+                paypalPayer = null,
+                paypalSavedPaymentMethods = listOf(paymentMethod("9999"))
+            )
         )
         coEvery { client.fetchCreditPresentmentMessages(any()) } returns null
 
@@ -252,7 +255,7 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
         return field.get(target)
     }
 
-    private fun paymentMethod(lastDigits: String) = PayPalSavedpaymentMethod(
+    private fun paymentMethod(lastDigits: String) = PayPalSavedPaymentMethod(
         label = "label",
         imageUrl = "https://example.com/icon.png",
         lastDigits = lastDigits,

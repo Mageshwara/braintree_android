@@ -1,7 +1,7 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod.state
 
 import com.braintreepayments.api.core.ExperimentalBetaApi
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummaryResult
 
 /**
@@ -19,7 +19,7 @@ internal sealed class FiClusterState {
     /**
      * A funding instrument is available to display.
      *
-     * Whether [paymentMethod]'s [PayPalSavedpaymentMethod.imageUrl] actually loads is not part of
+     * Whether [paymentMethod]'s [PayPalSavedPaymentMethod.imageUrl] actually loads is not part of
      * this state -- it can't be known at fetch time, since it depends on a separate, later image
      * load. `FiSection` attempts the load itself when rendering this state and falls back to a
      * generic bank/card glyph on failure; that fallback is a rendering-layer outcome, not a
@@ -28,7 +28,7 @@ internal sealed class FiClusterState {
      * @property paymentMethod the funding instrument to render
      */
     data class Available @OptIn(ExperimentalBetaApi::class) constructor(
-        val paymentMethod: PayPalSavedpaymentMethod
+        val paymentMethod: PayPalSavedPaymentMethod
     ) : FiClusterState()
 
     /**

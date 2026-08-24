@@ -7,7 +7,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.braintreepayments.api.core.ExperimentalBetaApi
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 import com.braintreepayments.api.paypalsavedpaymentmethod.state.FiClusterState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -58,7 +58,7 @@ class PayPalSavedPaymentMethodViewIntegrationTest {
         return field.get(view) as? View
     }
 
-    private fun paymentMethod(lastDigits: String) = PayPalSavedpaymentMethod(
+    private fun paymentMethod(lastDigits: String) = PayPalSavedPaymentMethod(
         label = "label",
         imageUrl = "https://example.com/icon.png",
         lastDigits = lastDigits,

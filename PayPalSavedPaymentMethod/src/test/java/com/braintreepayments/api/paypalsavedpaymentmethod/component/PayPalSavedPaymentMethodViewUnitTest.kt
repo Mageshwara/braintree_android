@@ -9,6 +9,7 @@ import android.widget.TextView
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ComponentAppearance
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.ContainerStyle
+import com.braintreepayments.api.paypalsavedpaymentmethod.styling.FundingInstrumentStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalLabelStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalLogoStyle
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodViewStyle
@@ -110,7 +111,7 @@ class PayPalSavedPaymentMethodViewUnitTest {
         view.setStyle(
             PayPalSavedPaymentMethodViewStyle(
                 container = ContainerStyle(
-                    fundingInstrument = com.braintreepayments.api.paypalsavedpaymentmethod.styling.FundingInstrumentStyle(
+                    fundingInstrument = FundingInstrumentStyle(
                         marginStartDp = 6f
                     )
                 )

@@ -4,7 +4,7 @@ import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.paypalsavedpaymentmethod.Payer
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummary
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummaryResult
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedpaymentMethod
+import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -57,7 +57,7 @@ class FiClusterStateUnitTest {
         assertTrue(result.toFiClusterState() is FiClusterState.NoNetworkLoad)
     }
 
-    private fun paymentMethod(lastDigits: String) = PayPalSavedpaymentMethod(
+    private fun paymentMethod(lastDigits: String) = PayPalSavedPaymentMethod(
         label = "label",
         imageUrl = "https://example.com/icon.png",
         lastDigits = lastDigits,
