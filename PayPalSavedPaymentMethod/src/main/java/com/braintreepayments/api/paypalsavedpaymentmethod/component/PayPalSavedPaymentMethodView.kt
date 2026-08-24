@@ -176,7 +176,7 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
     private fun fetchFI() {
         fiSection.setState(FiClusterState.Loading)
         fiFetchJob = scope().launch {
-            val state = payPalSavedPaymentMethodClient.fetchFI(paymentMethodIdJwt = mockJwt()).toFiClusterState()
+            val state = payPalSavedPaymentMethodClient.fetchFI().toFiClusterState()
             lastFiClusterState = state
             fiSection.setState(state)
         }
