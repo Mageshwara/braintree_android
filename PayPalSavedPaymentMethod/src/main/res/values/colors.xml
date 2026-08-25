@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- PayPalSavedPaymentMethodStyleResolver defaults -->
+    <color name="paypal_saved_payment_method_default_background_color">#FFFFFF</color>
+    <color name="paypal_saved_payment_method_default_text_color">#222222</color>
+    <color name="paypal_saved_payment_method_default_border_color">#00000000</color>
+
+    <!-- FiSection pill -->
+    <color name="paypal_saved_payment_method_pill_background_color">#F0F0F0</color>
+
+    <!-- PayPalSavedPaymentMethodView full-screen loader scrim -->
+    <color name="paypal_saved_payment_method_loader_scrim_color">#99000000</color>
+
+    <!-- CreditMessagingLander bottom sheet background -->
+    <color name="paypal_saved_payment_method_lander_background_color">#FFFFFF</color>
+
+    <!-- Shimmer placeholder -->
+    <color name="paypal_saved_payment_method_shimmer_color">#E0E0E0</color>
+
+    <!-- Icon tint shared by ic_close / ic_edit_pencil -->
+    <color name="paypal_saved_payment_method_icon_tint_color">#000000</color>
+
+    <!-- FI placeholder icons (card/bank) -->
+    <color name="paypal_saved_payment_method_fi_placeholder_fill_color">#FFFFFF</color>
+    <color name="paypal_saved_payment_method_fi_placeholder_stroke_color">#CCCCCC</color>
+    <color name="paypal_saved_payment_method_fi_placeholder_glyph_color">#000000</color>
+</resources>
