@@ -27,6 +27,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.Runs
+import io.mockk.coVerify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -139,6 +140,44 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
         assertEquals("••4242", fiSection.findViewById<android.widget.TextView>(
             com.braintreepayments.api.paypalsavedpaymentmethod.R.id.paypal_saved_payment_method_fi_text
         ).text.toString())
+    }
+
+    @Test
+    fun `tokenize Cancel after browser Success reports Cancel, restores last FI, and does not refetch`() {
+        setPrivateField(view, "lastFiClusterState", FiClusterState.NoNetworkLoad)
+
+        val successAuthResult = mockk<PayPalPaymentAuthResult.Success>()
+        every { launcher.handleReturnToApp(any(), any()) } returns successAuthResult
+        val tokenizeCallbackSlot = io.mockk.slot<PayPalTokenizeCallback>()
+        every { client.tokenize(successAuthResult, capture(tokenizeCallbackSlot)) } answers {
+            tokenizeCallbackSlot.captured.onPayPalResult(PayPalResult.Cancel)
+        }
+
+        view.handleReturnToApp(PayPalPendingRequest.Started("pending-string"), Intent())
+
+        assertEquals(PayPalResult.Cancel, fakeCallback.lastResult)
+        assertTrue(fiSection.visibility != android.view.View.VISIBLE)
+        coVerify(exactly = 0) { client.refetchFI(any(), any()) }
+    }
+
+    @Test
+    fun `tokenize Failure after browser Success reports the error, restores last FI, and does not refetch`() {
+        setPrivateField(view, "lastFiClusterState", FiClusterState.NoNetworkLoad)
+
+        val error = Exception("tokenize failed")
+        val successAuthResult = mockk<PayPalPaymentAuthResult.Success>()
+        every { launcher.handleReturnToApp(any(), any()) } returns successAuthResult
+        val tokenizeCallbackSlot = io.mockk.slot<PayPalTokenizeCallback>()
+        every { client.tokenize(successAuthResult, capture(tokenizeCallbackSlot)) } answers {
+            tokenizeCallbackSlot.captured.onPayPalResult(PayPalResult.Failure(error))
+        }
+
+        view.handleReturnToApp(PayPalPendingRequest.Started("pending-string"), Intent())
+
+        val result = fakeCallback.lastResult as? PayPalResult.Failure
+        assertEquals(error, result?.error)
+        assertTrue(fiSection.visibility != android.view.View.VISIBLE)
+        coVerify(exactly = 0) { client.refetchFI(any(), any()) }
     }
 
     // -- fetchFI / fetchCreditPresentmentMessages wiring --
