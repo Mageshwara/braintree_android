@@ -70,7 +70,6 @@ import com.braintreepayments.api.paypal.PayPalLauncher
 import com.braintreepayments.api.paypal.PayPalResult
 import com.braintreepayments.api.paypal.PayPalTokenizeCallback
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingContent
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingRequest
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodClient
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummaryResult
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
@@ -148,7 +147,8 @@ fun PayPalSavedPaymentMethodView(
                 displayState = result.paymentMethodSummary.toDisplayState()
                 if (style.showPayPalCreditMessaging) {
                     creditMessagingContent = payPalSavedPaymentMethodClient.fetchCreditPresentmentMessages(
-                        creditMessagingRequestFor(payPalCheckoutRequest)
+                        amount = payPalCheckoutRequest.amount,
+                        currency = payPalCheckoutRequest.currencyCode
                     )
                 }
                 isCreditMessageLoading = false
@@ -319,12 +319,6 @@ private fun FullScreenLoadingDialog() {
 private const val ACTIVITY_RESULT_REGISTRY_IS_NULL_MESSAGE =
     "ActivityResultRegistry is null. ActivityResultRegistry cannot be null for this flow."
 private const val ACTIVITY_OR_INTENT_IS_NULL_MESSAGE = "Activity or Intent is null. Unable to restore state."
-
-@OptIn(ExperimentalBetaApi::class)
-private fun creditMessagingRequestFor(payPalCheckoutRequest: PayPalCheckoutRequest): PayPalCreditMessagingRequest =
-    payPalCheckoutRequest.currencyCode?.let { currencyCode ->
-        PayPalCreditMessagingRequest.forAmount(currencyCode = currencyCode, value = payPalCheckoutRequest.amount)
-    } ?: PayPalCreditMessagingRequest.forAmount(value = payPalCheckoutRequest.amount)
 
 /**
  * Presentational view for the saved/editable PayPal funding instrument row — logo, "PayPal"
