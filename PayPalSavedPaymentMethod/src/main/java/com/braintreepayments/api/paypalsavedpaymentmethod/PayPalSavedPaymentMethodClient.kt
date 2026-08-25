@@ -10,6 +10,8 @@ import com.braintreepayments.api.core.MerchantRepository
 import com.braintreepayments.api.paypal.PayPalCheckoutRequest
 import com.braintreepayments.api.paypal.PayPalClient
 import com.braintreepayments.api.paypal.PayPalPaymentAuthCallback
+import com.braintreepayments.api.paypal.PayPalPaymentAuthResult
+import com.braintreepayments.api.paypal.PayPalTokenizeCallback
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +23,7 @@ import org.json.JSONObject
  * GraphQL calls directly against [BraintreeClient], and starts the edit-FI PayPal payment auth flow
  * via [PayPalClient].
  */
-internal class PayPalSavedPaymentMethodClient internal constructor(
+internal class PayPalSavedPaymentMethodClient(
     private val braintreeClient: BraintreeClient,
     private val payPalClient: PayPalClient,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
@@ -73,6 +75,20 @@ internal class PayPalSavedPaymentMethodClient internal constructor(
         payPalRequest: PayPalCheckoutRequest,
         callback: PayPalPaymentAuthCallback
     ) = payPalClient.createPaymentAuthRequestForEditFi(context, payPalRequest, callback)
+
+    /**
+     * Tokenizes the result of the edit-FI PayPal payment auth flow, after the app returns from
+     * the browser switch.
+     *
+     * @param paymentAuthResult a successful [PayPalPaymentAuthResult.Success] from
+     * `PayPalLauncher.handleReturnToApp`.
+     * @param callback          [PayPalTokenizeCallback]
+     */
+    @ExperimentalBetaApi
+    fun tokenize(
+        paymentAuthResult: PayPalPaymentAuthResult.Success,
+        callback: PayPalTokenizeCallback
+    ) = payPalClient.tokenize(paymentAuthResult, callback)
 
     /**
      * Fetches the sticky (default) vaulted funding instrument for display.
