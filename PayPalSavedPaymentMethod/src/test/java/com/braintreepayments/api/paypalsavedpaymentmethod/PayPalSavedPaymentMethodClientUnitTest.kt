@@ -10,7 +10,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -166,15 +165,15 @@ class PayPalSavedPaymentMethodClientUnitTest {
             } returns responseJson
 
             val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
-            val request = PayPalCreditMessagingRequest.forAmount(currencyCode = "USD", value = "55.00")
+            val expectedRequest = PayPalCreditMessagingRequest.forAmount(currencyCode = "USD", value = "55.00")
 
-            val result = sut.fetchCreditPresentmentMessages(request)
+            val result = sut.fetchCreditPresentmentMessages(amount = "55.00", currency = "USD")
 
             assertEquals(
                 "https://api.paypal.com/v2/credit/fetch-presentment-messages",
                 urlSlot.captured
             )
-            assertEquals(request.build().toString(), bodySlot.captured)
+            assertEquals(expectedRequest.build().toString(), bodySlot.captured)
             requireNotNull(result)
             assertEquals("As low as \$10/mo", result.message)
             assertEquals("Learn more", result.learnMoreText)
@@ -204,9 +203,8 @@ class PayPalSavedPaymentMethodClientUnitTest {
             coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
 
             val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
-            val request = PayPalCreditMessagingRequest.forAmount(currencyCode = "USD", value = "55.00")
 
-            val result = sut.fetchCreditPresentmentMessages(request)
+            val result = sut.fetchCreditPresentmentMessages(amount = "55.00", currency = "USD")
 
             requireNotNull(result)
             assertEquals(
@@ -230,9 +228,8 @@ class PayPalSavedPaymentMethodClientUnitTest {
             } returns responseJson
 
             val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
-            val request = PayPalCreditMessagingRequest.forAmount(currencyCode = "USD", value = "55.00")
 
-            sut.fetchCreditPresentmentMessages(request)
+            sut.fetchCreditPresentmentMessages(amount = "55.00", currency = "USD")
 
             assertEquals(
                 "https://api.sandbox.paypal.com/v2/credit/fetch-presentment-messages",
@@ -249,39 +246,11 @@ class PayPalSavedPaymentMethodClientUnitTest {
         coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
 
         val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
-        val request = PayPalCreditMessagingRequest.forAmount(currencyCode = "USD", value = "55.00")
 
-        val result = sut.fetchCreditPresentmentMessages(request)
+        val result = sut.fetchCreditPresentmentMessages(amount = "55.00", currency = "USD")
 
         assertNull(result)
     }
-
-    @Test
-    fun fetchCreditPresentmentMessages_withCallback_deliversResultAsynchronously() =
-        runTest(testDispatcher) {
-            val responseJson = """
-                {"messages":[{"preferred_message":{"id":"msg-1","type":"PLLT_MQ_GZ",
-                  "content":{"main_items":[{"type":"TEXT","text":"As low as \${'$'}10/mo"}]}}}]}
-            """.trimIndent()
-            val braintreeClient = MockkBraintreeClientBuilder()
-                .configurationSuccess(mockConfiguration())
-                .build()
-            coEvery { braintreeClient.sendPOST(url = any(), data = any()) } returns responseJson
-
-            val sut = PayPalSavedPaymentMethodClient(
-                braintreeClient,
-                payPalClient,
-                coroutineScope = CoroutineScope(testDispatcher)
-            )
-            val request = PayPalCreditMessagingRequest.forAmount(currencyCode = "USD", value = "55.00")
-
-            var result: PayPalCreditMessagingContent? = null
-            sut.fetchCreditPresentmentMessages(request) { result = it }
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            requireNotNull(result)
-            assertEquals("As low as \$10/mo", result?.message)
-        }
 
     @Test
     fun fetchCreditPresentmentMessages_whenNetworkError_returnsNull() = runTest(testDispatcher) {
@@ -291,9 +260,8 @@ class PayPalSavedPaymentMethodClientUnitTest {
         coEvery { braintreeClient.sendPOST(url = any(), data = any()) } throws IOException("network down")
 
         val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient)
-        val request = PayPalCreditMessagingRequest.forAmount(currencyCode = "USD", value = "55.00")
 
-        val result = sut.fetchCreditPresentmentMessages(request)
+        val result = sut.fetchCreditPresentmentMessages(amount = "55.00", currency = "USD")
 
         assertNull(result)
     }

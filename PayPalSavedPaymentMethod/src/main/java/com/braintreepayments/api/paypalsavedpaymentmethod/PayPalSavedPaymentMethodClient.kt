@@ -196,39 +196,22 @@ internal class PayPalSavedPaymentMethodClient internal constructor(
     /**
      * Fetches PayPal Pay Later / Credit presentment messaging for the edit-FI row.
      *
-     * Callback-based variant: the result is delivered asynchronously to [callback]. Use the
-     * `suspend` [fetchCreditPresentmentMessages] overload when calling from a coroutine.
-     *
-     * @param request  [PayPalCreditMessagingRequest]
-     * @param callback [PayPalCreditMessagingCallback] invoked with the result
-     */
-    @ExperimentalBetaApi
-    fun fetchCreditPresentmentMessages(
-        request: PayPalCreditMessagingRequest,
-        callback: PayPalCreditMessagingCallback
-    ) {
-        coroutineScope.launch {
-            callback.onPayPalCreditMessagingResult(fetchCreditPresentmentMessages(request))
-        }
-    }
-
-    /**
-     * Fetches PayPal Pay Later / Credit presentment messaging for the edit-FI row.
-     *
-     * `suspend` variant: call from a coroutine to receive the result directly as the return value.
-     * Use the [fetchCreditPresentmentMessages] overload that takes a
-     * [PayPalCreditMessagingCallback] outside a coroutine.
-     *
-     * @param request [PayPalCreditMessagingRequest]
+     * @param amount   the order amount, e.g. "55.00"
+     * @param currency ISO currency code, e.g. "USD"; when null, falls back to the merchant's
+     * configured PayPal currency, then to "USD".
      * @return [PayPalCreditMessagingContent], or null if the fetch fails or returns no
      * `preferred_message` - callers should hide the messaging row; the FI card still renders.
      */
     @ExperimentalBetaApi
     @Suppress("TooGenericExceptionCaught")
     suspend fun fetchCreditPresentmentMessages(
-        request: PayPalCreditMessagingRequest
+        amount: String,
+        currency: String? = null
     ): PayPalCreditMessagingContent? = try {
         val configuration = braintreeClient.getConfiguration()
+        val currencyCode = currency ?: configuration.payPalCurrencyIsoCode
+        val request = currencyCode?.let { PayPalCreditMessagingRequest.forAmount(currencyCode = it, value = amount) }
+            ?: PayPalCreditMessagingRequest.forAmount(value = amount)
         val responseBody = braintreeClient.sendPOST(
             url = PayPalCreditMessagingUrlAssembler.assembleURL(configuration.environment),
             data = request.build().toString()
