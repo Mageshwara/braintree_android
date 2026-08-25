@@ -32,15 +32,14 @@ data class PayPalCreditMessagingRequest(
     companion object {
         private const val FLOW_CONTEXT_KEY = "flow_context"
         private const val MESSAGE_PLACEMENTS_KEY = "message_placements"
-        private const val DEFAULT_CURRENCY_CODE = "USD"
 
         /**
          * Convenience factory for the common case of a single order amount.
          *
-         * @param currencyCode ISO currency code, e.g. "USD". Defaults to "USD" when not supplied.
+         * @param currencyCode ISO currency code, e.g. "USD".
          * @param value The amount, e.g. "55.00".
          */
-        fun forAmount(currencyCode: String = DEFAULT_CURRENCY_CODE, value: String): PayPalCreditMessagingRequest =
+        fun forAmount(currencyCode: String, value: String): PayPalCreditMessagingRequest =
             PayPalCreditMessagingRequest(
                 flowContext = FlowContext(),
                 messagePlacements = listOf(MessagePlacement(amount = Amount(currencyCode, value)))

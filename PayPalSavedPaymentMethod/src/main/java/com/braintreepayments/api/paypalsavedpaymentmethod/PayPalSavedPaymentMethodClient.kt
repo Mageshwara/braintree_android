@@ -198,7 +198,7 @@ internal class PayPalSavedPaymentMethodClient internal constructor(
      *
      * @param amount   the order amount, e.g. "55.00"
      * @param currency ISO currency code, e.g. "USD"; when null, falls back to the merchant's
-     * configured PayPal currency, then to "USD".
+     * configured PayPal currency. If neither is available, returns null.
      * @return [PayPalCreditMessagingContent], or null if the fetch fails or returns no
      * `preferred_message` - callers should hide the messaging row; the FI card still renders.
      */
@@ -210,13 +210,16 @@ internal class PayPalSavedPaymentMethodClient internal constructor(
     ): PayPalCreditMessagingContent? = try {
         val configuration = braintreeClient.getConfiguration()
         val currencyCode = currency ?: configuration.payPalCurrencyIsoCode
-        val request = currencyCode?.let { PayPalCreditMessagingRequest.forAmount(currencyCode = it, value = amount) }
-            ?: PayPalCreditMessagingRequest.forAmount(value = amount)
-        val responseBody = braintreeClient.sendPOST(
-            url = PayPalCreditMessagingUrlAssembler.assembleURL(configuration.environment),
-            data = request.build().toString()
-        )
-        PayPalCreditMessagingContent.fromJson(JSONObject(responseBody))
+        if (currencyCode == null) {
+            null
+        } else {
+            val request = PayPalCreditMessagingRequest.forAmount(currencyCode = currencyCode, value = amount)
+            val responseBody = braintreeClient.sendPOST(
+                url = PayPalCreditMessagingUrlAssembler.assembleURL(configuration.environment),
+                data = request.build().toString()
+            )
+            PayPalCreditMessagingContent.fromJson(JSONObject(responseBody))
+        }
     } catch (e: Exception) {
         if (e is CancellationException) throw e
         null
