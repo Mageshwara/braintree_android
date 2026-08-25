@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import com.braintreepayments.api.core.BraintreeClient
 import com.braintreepayments.api.core.ClientToken
-import com.braintreepayments.api.core.Configuration
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.core.GraphQLConstants
 import com.braintreepayments.api.core.MerchantRepository

@@ -28,10 +28,6 @@ import com.braintreepayments.api.paypal.PayPalPaymentAuthRequest
 import com.braintreepayments.api.paypal.PayPalPaymentAuthResult
 import com.braintreepayments.api.paypal.PayPalPendingRequest
 import com.braintreepayments.api.paypal.PayPalResult
-import com.braintreepayments.api.paypalsavedpaymentmethod.Amount
-import com.braintreepayments.api.paypalsavedpaymentmethod.FlowContext
-import com.braintreepayments.api.paypalsavedpaymentmethod.MessagePlacement
-import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalCreditMessagingRequest
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodClient
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
 import com.braintreepayments.api.paypalsavedpaymentmethod.callback.PayPalSavedPaymentMethodLaunchCallback
@@ -192,20 +188,11 @@ class PayPalSavedPaymentMethodView @JvmOverloads constructor(
         creditMessagingView.setState(CreditMessagingState.Loading)
         creditMessagingFetchJob = scope().launch {
             val request = payPalRequest
-            // TODO-GA - revist request mapper to belong where?
-            val creditRequest = PayPalCreditMessagingRequest(
-                flowContext = FlowContext(),
-                messagePlacements = listOf(
-                    MessagePlacement(
-                        amount = Amount(
-                            currencyCode = request?.currencyCode.orEmpty(),
-                            value = request?.amount.orEmpty()
-                        )
-                    )
-                )
-            )
             val state = payPalSavedPaymentMethodClient
-                .fetchCreditPresentmentMessages(creditRequest)
+                .fetchCreditPresentmentMessages(
+                    amount = request?.amount.orEmpty(),
+                    currency = request?.currencyCode
+                )
                 .toCreditMessagingState()
             creditMessagingView.setState(state)
         }

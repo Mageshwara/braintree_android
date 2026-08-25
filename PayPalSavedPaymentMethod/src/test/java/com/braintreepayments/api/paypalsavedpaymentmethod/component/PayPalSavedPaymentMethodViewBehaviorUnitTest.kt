@@ -190,7 +190,7 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
                 paypalSavedPaymentMethods = listOf(paymentMethod("9999"))
             )
         )
-        coEvery { client.fetchCreditPresentmentMessages(any()) } returns null
+        coEvery { client.fetchCreditPresentmentMessages(any(), any()) } returns null
 
         view.initializeForTest()
 
@@ -205,7 +205,7 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
     @Test
     fun `fetchFI failure hides the FI section`() {
         coEvery { client.fetchFI(any()) } returns PayPalSavedPaymentMethodSummaryResult.Failure(Exception("network"))
-        coEvery { client.fetchCreditPresentmentMessages(any()) } returns null
+        coEvery { client.fetchCreditPresentmentMessages(any(), any()) } returns null
 
         view.initializeForTest()
 
@@ -225,7 +225,7 @@ class PayPalSavedPaymentMethodViewBehaviorUnitTest {
 
         view.initializeForTest()
 
-        io.mockk.coVerify(exactly = 0) { client.fetchCreditPresentmentMessages(any()) }
+        io.mockk.coVerify(exactly = 0) { client.fetchCreditPresentmentMessages(any(), any()) }
     }
 
     // -- full-screen loader --
