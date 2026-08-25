@@ -11,6 +11,7 @@ import com.braintreepayments.api.paypal.PayPalCheckoutRequest
 import com.braintreepayments.api.paypal.PayPalClient
 import com.braintreepayments.api.paypal.PayPalPaymentAuthCallback
 import com.braintreepayments.api.paypal.PayPalPaymentAuthResult
+import com.braintreepayments.api.paypal.PayPalResult
 import com.braintreepayments.api.paypal.PayPalTokenizeCallback
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -89,6 +90,18 @@ internal class PayPalSavedPaymentMethodClient(
         paymentAuthResult: PayPalPaymentAuthResult.Success,
         callback: PayPalTokenizeCallback
     ) = payPalClient.tokenize(paymentAuthResult, callback)
+
+    /**
+     * `suspend` variant of [tokenize] - call from a coroutine to receive the result directly as
+     * the return value.
+     *
+     * @param paymentAuthResult a successful [PayPalPaymentAuthResult.Success] from
+     * `PayPalLauncher.handleReturnToApp`.
+     * @return [PayPalResult]
+     */
+    @ExperimentalBetaApi
+    suspend fun tokenize(paymentAuthResult: PayPalPaymentAuthResult.Success): PayPalResult =
+        payPalClient.tokenize(paymentAuthResult)
 
     /**
      * Fetches the sticky (default) vaulted funding instrument for display.
