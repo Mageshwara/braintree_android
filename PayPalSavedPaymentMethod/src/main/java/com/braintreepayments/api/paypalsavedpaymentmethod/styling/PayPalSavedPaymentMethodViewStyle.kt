@@ -16,7 +16,7 @@ import androidx.annotation.FontRes
  * @param container dimensions, spacing, shape, border, and internal layout of the component. Null
  * uses the SDK default container styling.
  */
-class PayPalSavedPaymentMethodViewStyle(
+class PayPalSavedPaymentMethodViewStyle @JvmOverloads constructor(
     val showPayPalLogo: Boolean = true,
     val showPayPalLabel: Boolean = true,
     val showPayPalCreditMessaging: Boolean = true,
@@ -36,7 +36,7 @@ class PayPalSavedPaymentMethodViewStyle(
  * SDK default font size for that element is used.
  * @param fontResId font used for text across the component. Null uses the SDK default font.
  */
-class ComponentAppearance(
+class ComponentAppearance @JvmOverloads constructor(
     @ColorInt val backgroundColor: Int? = null,
     @ColorInt val textColor: Int? = null,
     val baseFontSizeSp: Float? = null,
@@ -63,7 +63,7 @@ class ComponentAppearance(
  * @param creditMessaging styling of the Pay Later / credit messaging. Null uses the SDK default
  * credit messaging styling.
  */
-class ContainerStyle(
+class ContainerStyle @JvmOverloads constructor(
     val heightDp: Float? = null,
     val horizontalPaddingDp: Float? = null,
     val verticalPaddingDp: Float? = null,
@@ -81,7 +81,7 @@ class ContainerStyle(
  *
  * @param widthDp width of the PayPal logo, in dp. Null uses the SDK default.
  */
-class PayPalLogoStyle(
+class PayPalLogoStyle @JvmOverloads constructor(
     val widthDp: Float? = null
 )
 
@@ -93,7 +93,7 @@ class PayPalLogoStyle(
  * @param marginStartDp start margin of the label relative to the preceding PayPal logo, in dp.
  * Null uses the SDK default.
  */
-class PayPalLabelStyle(
+class PayPalLabelStyle @JvmOverloads constructor(
     val fontSizeSp: Float? = null,
     val marginStartDp: Float? = null
 )
@@ -108,7 +108,7 @@ class PayPalLabelStyle(
  * @param marginStartDp start margin of the funding instrument relative to the preceding "PayPal"
  * label, in dp. Null uses the SDK default.
  */
-class FundingInstrumentStyle(
+class FundingInstrumentStyle @JvmOverloads constructor(
     val textFontSizeSp: Float? = null,
     val editIconSizeDp: Float? = null,
     val marginStartDp: Float? = null
@@ -122,7 +122,7 @@ class FundingInstrumentStyle(
  * @param linkColor color of the "Learn more" link within credit messaging. Null uses the SDK
  * default.
  */
-class CreditMessagingStyle(
+class CreditMessagingStyle @JvmOverloads constructor(
     val fontSizeSp: Float? = null,
     @ColorInt val linkColor: Int? = null
 )
