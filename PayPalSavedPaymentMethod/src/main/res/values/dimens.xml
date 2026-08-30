@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- "PayPal" label line height (Figma: Marks Message V2 text box). -->
+    <dimen name="paypal_saved_payment_method_label_line_height">24sp</dimen>
+
+    <!-- FI cluster loading shimmer bar (Figma: "Center 3 Colmn" / Shimmer, node 14538:234367). -->
+    <dimen name="paypal_saved_payment_method_placeholder_width">72dp</dimen>
+    <dimen name="paypal_saved_payment_method_placeholder_height">16dp</dimen>
+    <dimen name="paypal_saved_payment_method_placeholder_corner_radius">4dp</dimen>
+
+    <!-- Gap between the FI cluster row and the credit-messaging row below it (Figma: "Frame
+         2147258134", node 14538:234453 — label row height 30dp, messaging text starts at y=36). -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_spacing">6dp</dimen>
+
+    <!-- Small trailing gap after the credit-messaging text/link so it doesn't sit flush against
+         the container edge. -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_end_padding">4dp</dimen>
+
+    <!-- Credit-messaging loading shimmer bar, shown while the Presentment API fetch is in
+         flight. -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_placeholder_width">220dp</dimen>
+    <dimen name="paypal_saved_payment_method_credit_messaging_placeholder_height">16dp</dimen>
+    <dimen name="paypal_saved_payment_method_credit_messaging_placeholder_corner_radius">4dp</dimen>
+
+    <!-- Credit-messaging wrapped-line spacing (Figma: "Or 4 interest-free payments..." text,
+         node 14538:234473 — 16sp text set on a 24sp line height). -->
+    <dimen name="paypal_saved_payment_method_credit_messaging_line_height">24sp</dimen>
+
+    <!-- Funding-instrument type icon (Figma: "Funding Icon", 27.87x20.72, height follows source
+         aspect ratio) and its trailing gap. Not merchant-configurable — FundingInstrumentStyle
+         has no icon-width/spacing fields. -->
+    <dimen name="paypal_saved_payment_method_funding_instrument_icon_width">28dp</dimen>
+    <dimen name="paypal_saved_payment_method_funding_instrument_icon_margin">8dp</dimen>
+
+    <!-- Funding-instrument chip shape/padding (Figma: Edit FI Chip). Not merchant-configurable —
+         FundingInstrumentStyle has no chip shape/padding fields. -->
+    <dimen name="paypal_saved_payment_method_funding_instrument_chip_corner_radius">6dp</dimen>
+    <dimen name="paypal_saved_payment_method_funding_instrument_chip_horizontal_padding">8dp</dimen>
+    <dimen name="paypal_saved_payment_method_funding_instrument_chip_vertical_padding">4dp</dimen>
+
+    <!-- PayPalSavedPaymentMethodStyleResolver defaults, used when the merchant leaves the
+         corresponding ComponentAppearance/ContainerStyle field null. -->
+    <dimen name="paypal_saved_payment_method_style_default_horizontal_padding">0dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_vertical_padding">10dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_corner_radius">0dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_border_width">0dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_logo_width">48dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_label_font_size">20sp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_label_margin_start">13dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_funding_instrument_text_font_size">14sp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_edit_icon_size">16dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_funding_instrument_margin_start">8dp</dimen>
+    <dimen name="paypal_saved_payment_method_style_default_credit_messaging_font_size">16sp</dimen>
+
+    <!-- Full-screen edit-FI loading dialog (Figma: "Spinner", node 14561:150769). -->
+    <dimen name="paypal_saved_payment_method_loading_dialog_spinner_size">48dp</dimen>
+    <dimen name="paypal_saved_payment_method_loading_dialog_spinner_stroke_width">2dp</dimen>
+    <dimen name="paypal_saved_payment_method_loading_dialog_spinner_text_spacing">24dp</dimen>
+    <dimen name="paypal_saved_payment_method_loading_dialog_text_font_size">17sp</dimen>
+    <dimen name="paypal_saved_payment_method_loading_dialog_text_line_height">22sp</dimen>
+</resources>

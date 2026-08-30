@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ShimmerBox gradient endpoints (Figma: "Center 3 Colmn" / Shimmer, node 14538:234367). -->
+    <color name="paypal_saved_payment_method_shimmer_start">#EDF0F2</color>
+    <color name="paypal_saved_payment_method_shimmer_end">#BBBEC0</color>
+
+    <!-- Funding-instrument chip background (Figma: Edit FI Chip). Not merchant-configurable —
+         FundingInstrumentStyle has no background-color field. -->
+    <color name="paypal_saved_payment_method_funding_instrument_chip_background">#F0F2F9</color>
+
+    <!-- PayPalSavedPaymentMethodStyleResolver defaults, used when the merchant leaves the
+         corresponding ComponentAppearance/ContainerStyle field null. -->
+    <color name="paypal_saved_payment_method_style_default_background">#FFFFFF</color>
+    <color name="paypal_saved_payment_method_style_default_text_color">#222222</color>
+    <color name="paypal_saved_payment_method_style_default_border_color">#00000000</color>
+
+    <!-- Full-screen edit-FI loading dialog (Figma: "Spinner", node 14561:150769). -->
+    <color name="paypal_saved_payment_method_loading_dialog_background">#E6FFFFFF</color>
+    <color name="paypal_saved_payment_method_loading_dialog_spinner_color">#000000</color>
+    <color name="paypal_saved_payment_method_loading_dialog_text_color">#000000</color>
+</resources>

@@ -1,10 +1,14 @@
 package com.braintreepayments.api.paypalsavedpaymentmethod
 
+import com.braintreepayments.api.core.Authorization
 import com.braintreepayments.api.core.ClientToken
 import com.braintreepayments.api.core.Configuration
 import com.braintreepayments.api.core.ExperimentalBetaApi
 import com.braintreepayments.api.core.MerchantRepository
+import com.braintreepayments.api.core.TokenizationKey
 import com.braintreepayments.api.paypal.PayPalClient
+import com.braintreepayments.api.testutils.Fixtures
+import com.braintreepayments.api.testutils.FixturesHelper
 import com.braintreepayments.api.testutils.MockkBraintreeClientBuilder
 import io.mockk.coEvery
 import io.mockk.every
@@ -28,6 +32,7 @@ class PayPalSavedPaymentMethodClientUnitTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val payPalClient = mockk<PayPalClient>(relaxed = true)
+    private val merchantRepository = mockk<MerchantRepository>(relaxed = true)
 
     private fun mockConfiguration(env: String = "production"): Configuration =
         mockk(relaxed = true) {
@@ -80,6 +85,63 @@ class PayPalSavedPaymentMethodClientUnitTest {
         assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Failure)
         val error = (result as PayPalSavedPaymentMethodSummaryResult.Failure).error
         assertTrue(error is PayPalSavedPaymentMethodSummaryException)
+        assertEquals(
+            PayPalSavedPaymentMethodSummaryException.MISSING_PAYMENT_METHOD_ID_JWT,
+            error.message
+        )
+    }
+
+    @Test
+    fun fetchFI_noArg_whenClientTokenCarriesJwt_postsStickyFiBodyAndReturnsSuccess() = runTest(testDispatcher) {
+        val responseJson = """{"data":{"paypalFundingInstrumentDetails":{"payer":null,"paymentMethods":[]}}}"""
+        val bodySlot = slot<JSONObject>()
+        val braintreeClient = MockkBraintreeClientBuilder().build()
+        coEvery { braintreeClient.sendGraphQLPOST(capture(bodySlot)) } returns responseJson
+        val clientToken = Authorization.fromString(
+            FixturesHelper.base64Encode(Fixtures.CLIENT_TOKEN_WITH_PAYMENT_METHOD_ID_JWT)
+        ) as ClientToken
+        every { merchantRepository.authorization } returns clientToken
+
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient, merchantRepository = merchantRepository)
+
+        val result = sut.fetchFI()
+
+        val input = bodySlot.captured.getJSONObject("variables").getJSONObject("input")
+        assertEquals("payment_method_id_jwt", input.getString("paymentMethodIdJwt"))
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Success)
+    }
+
+    @Test
+    fun fetchFI_noArg_whenClientTokenHasNoJwt_returnsFailure() = runTest(testDispatcher) {
+        val braintreeClient = MockkBraintreeClientBuilder().build()
+        val clientToken = Authorization.fromString(
+            FixturesHelper.base64Encode(Fixtures.CLIENT_TOKEN)
+        ) as ClientToken
+        every { merchantRepository.authorization } returns clientToken
+
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient, merchantRepository = merchantRepository)
+
+        val result = sut.fetchFI()
+
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Failure)
+        val error = (result as PayPalSavedPaymentMethodSummaryResult.Failure).error
+        assertEquals(
+            PayPalSavedPaymentMethodSummaryException.MISSING_PAYMENT_METHOD_ID_JWT,
+            error.message
+        )
+    }
+
+    @Test
+    fun fetchFI_noArg_whenAuthorizationIsNotClientToken_returnsFailure() = runTest(testDispatcher) {
+        val braintreeClient = MockkBraintreeClientBuilder().build()
+        every { merchantRepository.authorization } returns mockk<TokenizationKey>(relaxed = true)
+
+        val sut = PayPalSavedPaymentMethodClient(braintreeClient, payPalClient, merchantRepository = merchantRepository)
+
+        val result = sut.fetchFI()
+
+        assertTrue(result is PayPalSavedPaymentMethodSummaryResult.Failure)
+        val error = (result as PayPalSavedPaymentMethodSummaryResult.Failure).error
         assertEquals(
             PayPalSavedPaymentMethodSummaryException.MISSING_PAYMENT_METHOD_ID_JWT,
             error.message

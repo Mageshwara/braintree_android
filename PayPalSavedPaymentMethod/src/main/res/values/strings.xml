@@ -2,4 +2,5 @@
 <resources>
     <string name="paypal_saved_payment_method_label">PayPal</string>
     <string name="paypal_saved_payment_method_label_funding_instrument_card_masked_number">••%1$s</string>
+    <string name="paypal_saved_payment_method_loading_dialog_message">Sending you to PayPal</string>
 </resources>
