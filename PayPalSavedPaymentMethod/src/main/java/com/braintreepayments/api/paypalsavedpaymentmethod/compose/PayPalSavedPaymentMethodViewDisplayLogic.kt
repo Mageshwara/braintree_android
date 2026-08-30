@@ -37,6 +37,15 @@ internal fun fiIconFor(type: String?) = when (type?.uppercase()) {
     else -> null
 }
 
+/**
+ * The FI's last digits to render masked, or null when the FI's label should be shown instead.
+ * Only CARD/BANK ever have a meaningful last-digits value - PAYPAL_CREDIT (e.g. "Pay in 4") has
+ * none, but the backend sends a placeholder value (e.g. "0000") instead of omitting the field, so
+ * a blank/non-blank check on [lastDigits] alone can't be used to decide.
+ */
+internal fun maskableLastDigitsOrNull(type: String?, lastDigits: String?): String? =
+    if (fiIconFor(type) != null && !lastDigits.isNullOrBlank()) lastDigits else null
+
 internal fun Context.launchCreditMessagingLander(url: String) {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
         putExtras(Bundle().apply { putBinder(EXTRA_CUSTOM_TABS_SESSION, null) })
