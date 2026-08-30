@@ -614,13 +614,16 @@ private fun CreditMessagingPlaceholder(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalBetaApi::class)
 @Composable
 private fun fiClusterText(content: PayPalSavedPaymentMethodDisplayState.Content): String {
-    val lastDigits = content.paymentMethod.lastDigits
-    val masked = if (lastDigits.isNullOrBlank()) {
-        null
-    } else {
+    val method = content.paymentMethod
+    val lastDigits = method.lastDigits
+    // Only CARD/BANK ever have a meaningful lastDigits value. PAYPAL_CREDIT (e.g. Pay in 4) has
+    // no real last digits - the backend sends a placeholder ("0000") rather than omitting the
+    // field, so lastDigits alone can't be used to decide whether to mask or show the label.
+    return if (fiIconFor(method.type) != null && !lastDigits.isNullOrBlank()) {
         stringResource(R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number, lastDigits)
+    } else {
+        method.label
     }
-    return masked ?: content.paymentMethod.label
 }
 
 private val PayPalSavedPaymentMethodStyleResolver.fontFamily: FontFamily
