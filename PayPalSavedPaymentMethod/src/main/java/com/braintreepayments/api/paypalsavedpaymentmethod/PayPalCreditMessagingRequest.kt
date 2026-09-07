@@ -60,9 +60,7 @@ data class PayPalCreditMessagingRequest(
 data class FlowContext(
     val attributes: List<String> = listOf(
         "BRAND_BRAINTREE",
-        "EXPERIENCE_ANDROID_SDK",
-        "EXPERIENCE_VIEW_EDIT_FI",
-        "EXPERIENCE_EXTERNAL_DIRECT"
+        "EXPERIENCE_ANDROID_SDK"
     ),
     val channel: String = "MOBILE_APP",
     val flowSpecifier: String = "EARLY_PRESENTMENT"

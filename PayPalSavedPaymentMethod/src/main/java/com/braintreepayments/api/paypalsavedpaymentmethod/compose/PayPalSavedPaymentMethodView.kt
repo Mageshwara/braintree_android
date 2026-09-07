@@ -74,6 +74,7 @@ import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMeth
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethodSummaryResult
 import com.braintreepayments.api.paypalsavedpaymentmethod.PayPalSavedPaymentMethod
 import com.braintreepayments.api.paypalsavedpaymentmethod.R
+import com.braintreepayments.api.paypalsavedpaymentmethod.imageloader.LoaderImage
 import com.braintreepayments.api.paypalsavedpaymentmethod.model.PayPalSavedPaymentMethodDisplayState
 import com.braintreepayments.api.paypalsavedpaymentmethod.model.toDisplayState
 import com.braintreepayments.api.paypalsavedpaymentmethod.styling.PayPalSavedPaymentMethodStyleResolver
@@ -542,13 +543,22 @@ private fun FiCluster(
                 FiClusterPlaceholder()
             }
             is PayPalSavedPaymentMethodDisplayState.Content -> {
-                fiIconFor(displayState.paymentMethod.type)?.let { iconRes ->
+                val fiIconRes = fiIconFor(displayState.paymentMethod.type)
+                val imageUrl = displayState.paymentMethod.imageUrl
+                val iconModifier = Modifier
+                    .width(dimensionResource(R.dimen.paypal_saved_payment_method_funding_instrument_icon_width))
+                    .padding(end = iconMargin)
+                if (imageUrl.isNotBlank()) {
+                    LoaderImage(
+                        url = imageUrl,
+                        placeholder = painterResource(fiIconRes ?: R.drawable.ic_paypal_brand_logo),
+                        modifier = iconModifier
+                    )
+                } else if (fiIconRes != null) {
                     Image(
-                        painter = painterResource(iconRes),
+                        painter = painterResource(fiIconRes),
                         contentDescription = null,
-                        modifier = Modifier
-                            .width(dimensionResource(R.dimen.paypal_saved_payment_method_funding_instrument_icon_width))
-                            .padding(end = iconMargin)
+                        modifier = iconModifier
                     )
                 }
                 Text(
@@ -617,7 +627,10 @@ private fun fiClusterText(content: PayPalSavedPaymentMethodDisplayState.Content)
     val method = content.paymentMethod
     val maskableLastDigits = maskableLastDigitsOrNull(method.type, method.lastDigits)
     return if (maskableLastDigits != null) {
-        stringResource(R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number, maskableLastDigits)
+        stringResource(
+            R.string.paypal_saved_payment_method_label_funding_instrument_card_masked_number,
+            maskableLastDigits
+        )
     } else {
         method.label
     }

@@ -59,6 +59,7 @@ dependencies {
     implementation libs.android.compose
     implementation libs.androidx.compose.viewModel
     implementation libs.androidx.datastore.preferences
+    implementation libs.okhttp
 
     def composeBom = platform(libs.androidx.compose.bom)
     implementation composeBom
@@ -73,6 +74,8 @@ dependencies {
     testImplementation libs.test.parameter.injector
     testImplementation project(':TestUtils')
     testImplementation libs.coroutines.test
+    testImplementation libs.okhttp.mockwebserver
+    testImplementation libs.okhttp.tls
     debugImplementation libs.androidx.ui.tooling
 
     androidTestImplementation project(':TestUtils')
